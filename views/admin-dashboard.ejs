@@ -42,18 +42,20 @@
   <h3>Usuarios pendientes de activación</h3>
   <% if (pendientes.length) { %>
   <table class="tabla">
-    <thead><tr><th>UF</th><th>DNI</th><th>Propietario</th><th>Acción</th></tr></thead>
+    <thead><tr><th>UF</th><th>CUIT</th><th>Propietario</th><th>Email</th><th>Acción</th></tr></thead>
     <tbody>
       <% pendientes.forEach(function(u) { %>
       <tr>
         <td><%= u.uf %></td>
-        <td><%= u.dni %></td>
+        <td><%= u.cuit || u.dni || '' %></td>
         <td><%= u.propietario %></td>
+        <td><%= u.email || '' %></td>
         <td>
           <form method="POST" action="/admin/activar" style="display:flex;gap:4px">
             <input type="hidden" name="uf" value="<%= u.uf %>">
+            <input type="hidden" name="email" value="<%= u.email || '' %>">
             <input type="text" name="password" placeholder="Contraseña" required style="width:120px">
-            <button type="submit" class="btn btn-sm">Activar</button>
+            <button type="submit" class="btn btn-sm">Activar y enviar</button>
           </form>
         </td>
       </tr>
@@ -68,12 +70,13 @@
 <div class="card">
   <h3>Usuarios activos</h3>
   <table class="tabla">
-    <thead><tr><th>UF</th><th>Propietario</th><th>Rol</th><th>Estado</th></tr></thead>
+    <thead><tr><th>UF</th><th>Propietario</th><th>Email</th><th>Rol</th><th>Estado</th></tr></thead>
     <tbody>
       <% usuarios.filter(function(u){return u.activo}).forEach(function(u) { %>
       <tr>
         <td><%= u.uf %></td>
         <td><%= u.propietario %></td>
+        <td><%= u.email || '' %></td>
         <td><%= u.rol %></td>
         <td><span class="badge badge-ok">Activo</span></td>
       </tr>
