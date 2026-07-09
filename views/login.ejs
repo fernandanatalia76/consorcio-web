@@ -1,0 +1,15 @@
+<%- include('header') %>
+<div class="auth-card">
+  <h1>🏢 Consorcio</h1>
+  <h2>Iniciar sesión</h2>
+  <% if (error) { %><div class="msg error"><%= error %></div><% } %>
+  <form method="POST" action="/login">
+    <label>N° de Unidad Funcional</label>
+    <input type="text" name="uf" placeholder="Ej: 101" required>
+    <label>Contraseña</label>
+    <input type="password" name="password" required>
+    <button type="submit" class="btn btn-primary">Ingresar</button>
+  </form>
+  <p class="auth-link">¿Primera vez? <a href="/registrar">Registrate acá</a></p>
+</div>
+<%- include('footer') %>

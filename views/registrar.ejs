@@ -1,0 +1,17 @@
+<%- include('header') %>
+<div class="auth-card">
+  <h1>🏢 Consorcio</h1>
+  <h2>Solicitar acceso</h2>
+  <% if (error) { %><div class="msg error"><%= error %></div><% } %>
+  <% if (ok) { %><div class="msg success">✅ Solicitud registrada. El administrador te asignará una contraseña.</div><% } else { %>
+  <form method="POST" action="/registrar">
+    <label>N° de Unidad Funcional</label>
+    <input type="text" name="uf" placeholder="Ej: 101" required>
+    <label>DNI o CUIT</label>
+    <input type="text" name="dni" placeholder="Ej: 12345678" required>
+    <button type="submit" class="btn btn-primary">Solicitar acceso</button>
+  </form>
+  <% } %>
+  <p class="auth-link"><a href="/login">← Volver al login</a></p>
+</div>
+<%- include('footer') %>

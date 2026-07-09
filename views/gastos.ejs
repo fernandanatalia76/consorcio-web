@@ -1,0 +1,26 @@
+<%- include('header') %>
+<h1>Gastos del Mes — <%= mesLabel %></h1>
+<% if (error) { %><div class="msg error"><%= error %></div><% } %>
+<% if (gastos.length) { %>
+<div class="card">
+  <table class="tabla">
+    <thead>
+      <tr><th>Proveedor</th><th>Fecha</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr>
+    </thead>
+    <tbody>
+      <% gastos.forEach(function(g) { %>
+      <tr>
+        <td><%= g.proveedor %></td>
+        <td><%= g.fecha %></td>
+        <td class="num">$<%= g.importe %></td>
+        <td class="num">$<%= g.montoDebitado || '0' %></td>
+        <td><span class="badge <%= g.estado.indexOf('Validado') !== -1 ? 'badge-ok' : g.estado.indexOf('Sin') !== -1 ? 'badge-warn' : '' %>"><%= g.estado %></span></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+<% } else if (!error) { %>
+<div class="msg warning">No hay gastos cargados para este mes.</div>
+<% } %>
+<%- include('footer') %>

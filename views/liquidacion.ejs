@@ -1,0 +1,44 @@
+<%- include('header') %>
+<h1>Mi Liquidación — <%= mesLabel %></h1>
+<% if (error) { %><div class="msg error"><%= error %></div><% } %>
+<% if (dato) { %>
+<div class="card">
+  <table class="tabla-detalle">
+    <tr><th>UF</th><td><%= dato.uf %></td></tr>
+    <tr><th>Depto</th><td><%= dato.depto %></td></tr>
+    <tr><th>Propietario</th><td><%= dato.propietario %></td></tr>
+    <tr><th>Coeficiente</th><td><%= dato.coef %></td></tr>
+  </table>
+</div>
+<div class="grid-2">
+  <div class="card">
+    <h3>Detalle</h3>
+    <table class="tabla-detalle">
+      <tr><th>Expensas Adeudadas</th><td class="num">$<%= dato.expAdeudadas %></td></tr>
+      <tr><th>Pagos</th><td class="num">$<%= dato.pagos %></td></tr>
+      <tr><th>Deuda</th><td class="num bold">$<%= dato.deuda %></td></tr>
+      <tr><th>Exp de Mes</th><td class="num">$<%= dato.expMes %></td></tr>
+      <tr><th>Extraordinaria</th><td class="num">$<%= dato.extraordinaria %></td></tr>
+      <tr><th>Sum</th><td class="num">$<%= dato.sum %></td></tr>
+      <tr><th>Destapación</th><td class="num">$<%= dato.destapacion %></td></tr>
+      <tr><th>Bicis</th><td class="num">$<%= dato.bicis %></td></tr>
+    </table>
+  </div>
+  <div class="card highlight">
+    <h3>Vencimientos</h3>
+    <div class="venc">
+      <div class="venc-item">
+        <span class="venc-label">1er Vencimiento (<%= dia1 %>/<%= mesVenc %>/<%= anioVenc %>)</span>
+        <span class="venc-monto">$<%= dato.venc1 %></span>
+      </div>
+      <div class="venc-item">
+        <span class="venc-label">2do Vencimiento (<%= dia2 %>/<%= mesVenc %>/<%= anioVenc %>)</span>
+        <span class="venc-monto">$<%= dato.venc2 %></span>
+      </div>
+    </div>
+  </div>
+</div>
+<% } else if (!error) { %>
+<div class="msg warning">No se encontraron datos para tu UF en la liquidación de <%= mesLabel %>.</div>
+<% } %>
+<%- include('footer') %>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consorcio</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-brand">🏢 Consorcio</div>
+  <% if (usuario) { %>
+  <div class="nav-links">
+    <% if (usuario.rol === 'admin') { %>
+      <a href="/admin">Dashboard</a>
+      <a href="/admin/liquidacion">Liquidación</a>
+      <a href="/gastos">Gastos</a>
+    <% } else { %>
+      <a href="/mi-liquidacion">Mi Liquidación</a>
+      <a href="/mis-pagos">Mis Pagos</a>
+      <a href="/gastos">Gastos del Mes</a>
+    <% } %>
+    <a href="/logout" class="btn-logout">Salir (<%= usuario.uf %>)</a>
+  </div>
+  <% } %>
+</nav>
+<main class="container">
