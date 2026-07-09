@@ -3,48 +3,39 @@
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (dato) { %>
 <div class="card" style="overflow-x:auto">
-  <table class="tabla-liq">
+  <table class="tabla tabla-striped">
     <thead>
       <tr>
-        <th class="col-uf">UF</th>
-        <th>Depto</th>
-        <th>Propietario</th>
-        <th>% Coef</th>
-        <th class="col-money">Exp. Adeudadas</th>
-        <th class="col-money">Pagos</th>
-        <th class="col-money col-deuda">Deuda</th>
-        <th class="col-money">Exp de Mes</th>
-        <th class="col-money">Extraordinaria</th>
-        <th class="col-money">Sum</th>
-        <th class="col-money">Destapación</th>
-        <th class="col-money">Bicis</th>
-        <th class="col-money col-venc">1er Venc</th>
-        <th class="col-money col-venc">2do Venc</th>
+        <th>UF</th><th>Depto</th><th>Propietario</th><th>% Coef</th>
+        <th>Exp. Adeudadas</th><th>Pagos</th><th class="col-deuda">Deuda</th>
+        <th>Exp de Mes</th><th>Extraordinaria</th><th>Sum</th>
+        <th>Destapación</th><th>Bicis</th>
+        <th class="col-venc1">1er Venc</th><th class="col-venc2">2do Venc</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td class="col-uf"><strong><%= dato.uf %></strong></td>
+        <td><strong><%= dato.uf %></strong></td>
         <td><%= dato.depto %></td>
         <td><%= dato.propietario %></td>
-        <td class="num"><%= dato.coef %></td>
-        <td class="num">$<%= dato.expAdeudadas %></td>
-        <td class="num green">$<%= dato.pagos %></td>
-        <td class="num col-deuda"><strong>$<%= dato.deuda %></strong></td>
-        <td class="num">$<%= dato.expMes %></td>
-        <td class="num">$<%= dato.extraordinaria %></td>
-        <td class="num">$<%= dato.sum %></td>
-        <td class="num">$<%= dato.destapacion %></td>
-        <td class="num">$<%= dato.bicis %></td>
-        <td class="num col-venc"><strong>$<%= dato.venc1 %></strong></td>
-        <td class="num col-venc"><strong>$<%= dato.venc2 %></strong></td>
+        <td><%= dato.coef %></td>
+        <td>$<%= dato.expAdeudadas %></td>
+        <td>$<%= dato.pagos %></td>
+        <td class="col-deuda"><strong>$<%= dato.deuda %></strong></td>
+        <td>$<%= dato.expMes %></td>
+        <td>$<%= dato.extraordinaria %></td>
+        <td>$<%= dato.sum %></td>
+        <td>$<%= dato.destapacion %></td>
+        <td>$<%= dato.bicis %></td>
+        <td class="col-venc1"><strong>$<%= dato.venc1 %></strong></td>
+        <td class="col-venc2"><strong>$<%= dato.venc2 %></strong></td>
       </tr>
     </tbody>
   </table>
 </div>
 
 <div class="grid-2" style="margin-top:16px">
-  <div class="card card-venc">
+  <div class="card card-venc1">
     <h3>📅 1er Vencimiento</h3>
     <div class="venc-fecha"><%= dia1 %>/<%= mesVenc %>/<%= anioVenc %></div>
     <div class="venc-monto">$<%= dato.venc1 %></div>
