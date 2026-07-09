@@ -13,11 +13,36 @@ h3 { font-size: 15px; margin-bottom: 10px; color: #1a4a6e; }
 .card.highlight { border-left: 4px solid #1a73e8; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* Tablas - datos centrados */
 .tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
-.tabla th { background: #1a4a6e; color: #fff; padding: 8px 12px; text-align: left; }
-.tabla td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
-.tabla tr:hover { background: #f8f9fa; }
-.num { text-align: right; }
+.tabla th { background: #1a4a6e; color: #fff; padding: 8px 12px; text-align: center; font-weight: 500; }
+.tabla td { padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: center; }
+.tabla tr:hover { background: #f0f4ff; }
+
+/* Filas alternadas blanco/gris */
+.tabla-striped tbody tr:nth-child(odd) { background: #ffffff; }
+.tabla-striped tbody tr:nth-child(even) { background: #f8f9fa; }
+.tabla-striped tbody tr:hover { background: #e8f0fe; }
+
+/* Columnas especiales liquidación */
+.col-deuda { background: #fce8e6 !important; color: #c5221f; }
+.col-venc1 { background: #e6f4ea !important; color: #137333; }
+.col-venc2 { background: #fff3e0 !important; color: #e65100; }
+.tabla th.col-deuda { background: #c5221f !important; color: #fff; }
+.tabla th.col-venc1 { background: #137333 !important; color: #fff; }
+.tabla th.col-venc2 { background: #e65100 !important; color: #fff; }
+
+/* Cards de vencimiento */
+.card-venc1 { text-align: center; border-left: 4px solid #137333; }
+.card-venc1 h3 { color: #137333; }
+.card-venc1 .venc-fecha { font-size: 14px; color: #5f6368; margin: 8px 0; }
+.card-venc1 .venc-monto { font-size: 28px; font-weight: 700; color: #137333; }
+.card-venc2 { text-align: center; border-left: 4px solid #e65100; }
+.card-venc2 h3 { color: #e65100; }
+.card-venc2 .venc-fecha { font-size: 14px; color: #5f6368; margin: 8px 0; }
+.card-venc2 .venc-monto { font-size: 28px; font-weight: 700; color: #e65100; }
+
 .tabla-detalle { width: 100%; font-size: 14px; }
 .tabla-detalle th { text-align: left; padding: 6px 12px 6px 0; color: #5f6368; width: 40%; }
 .tabla-detalle td { padding: 6px 0; }
@@ -41,6 +66,3 @@ h3 { font-size: 15px; margin-bottom: 10px; color: #1a4a6e; }
 .btn-primary { background: #1a4a6e; color: #fff; width: 100%; margin-top: 20px; }
 .btn-primary:hover { background: #0d3a5c; }
 .btn-sm { padding: 4px 12px; font-size: 12px; background: #1a73e8; color: #fff; border-radius: 4px; }
-.venc { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
-.venc-item { display: flex; justify-content: space-between; padding: 12px 16px; background: #e8f0fe; border-radius: 6px; }
-.venc-monto { font-size: 22px; font-weight: 700; color: #1a4a6e; }
