@@ -1,93 +1,128 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #1a1a2e; }
+<%- include('header') %>
+<h1>Gastos y Saldos — <%= mesLabel %></h1>
+<% if (error) { %><div class="msg error"><%= error %></div><% } %>
 
-.navbar { background: #1a4a6e; color: #fff; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
-.nav-brand { font-size: 18px; font-weight: 700; }
-.nav-links { display: flex; gap: 16px; align-items: center; }
-.nav-links a { color: #cfe2f3; text-decoration: none; font-size: 14px; }
-.nav-links a:hover { color: #fff; }
-.btn-logout { background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 4px; }
+<% if (cashflow) { %>
+<div class="card resumen-card">
+  <h3>Resumen — Gastos ordinarios <%= mesLabel %></h3>
+  <div class="resumen-grid">
+    <div class="resumen-item" style="background:#f1f3f4">
+      <div class="resumen-label">Saldo inicial</div>
+      <div class="resumen-valor">$<%= cashflow.saldoInicial || '0' %></div>
+    </div>
+    <div class="resumen-item" style="background:#e6f4ea">
+      <div class="resumen-label">Créditos cobrados</div>
+      <div class="resumen-valor">$<%= cashflow.creditosCobrados || '0' %></div>
+    </div>
+    <div class="resumen-item" style="background:#fce8e6">
+      <div class="resumen-label">Total débitos</div>
+      <div class="resumen-valor">$<%= cashflow.debitosProveedores || '0' %></div>
+    </div>
+    <div class="resumen-item" style="background:#e8f0fe">
+      <div class="resumen-label">Saldo final</div>
+      <div class="resumen-valor">$<%= cashflow.saldoFinal || '0' %></div>
+    </div>
+  </div>
+</div>
+<% } %>
 
-.container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+<% if (gastos.length) { %>
+<div class="card">
+  <h3>Detalle de facturas — Gastos ordinarios</h3>
+  <div style="overflow-x:auto">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Proveedor</th>
+          <th>Fecha</th>
+          <th class="num">Facturado</th>
+          <th class="num">Debitado</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% gastos.forEach(function(g) { %>
+        <tr>
+          <td><%= g.proveedor %></td>
+          <td><%= g.fecha %></td>
+          <td class="num">$<%= g.importe %></td>
+          <td class="num">$<%= g.montoDebitado || '0' %></td>
+          <td>
+            <% if (g.estado && g.estado.indexOf('Validado') !== -1) { %>
+              <span class="badge badge-ok"><%= g.estado %></span>
+            <% } else if (g.estado && g.estado.indexOf('Sin') !== -1) { %>
+              <span class="badge badge-warn"><%= g.estado %></span>
+            <% } else { %>
+              <span class="badge"><%= g.estado %></span>
+            <% } %>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } else if (!error) { %>
+<div class="msg warning">No hay gastos ordinarios cargados para este mes.</div>
+<% } %>
 
-h1 { font-size: 22px; margin-bottom: 16px; color: #1a4a6e; }
-h2 { font-size: 18px; margin-bottom: 12px; }
-h3 { font-size: 15px; margin-bottom: 10px; color: #1a4a6e; }
+<% if (impuestos.length) { %>
+<div class="card">
+  <h3>Detalle — Impuestos y Comisiones bancarias</h3>
+  <div style="overflow-x:auto">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th>Fecha</th>
+          <th class="num">Facturado</th>
+          <th class="num">Debitado</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% impuestos.forEach(function(g) { %>
+        <tr>
+          <td><%= g.proveedor %></td>
+          <td><%= g.fecha %></td>
+          <td class="num">$<%= g.importe %></td>
+          <td class="num">$<%= g.montoDebitado || '0' %></td>
+          <td><span class="badge badge-ok"><%= g.estado %></span></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } %>
 
-.card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-.card.highlight { border-left: 4px solid #1a73e8; }
-
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
-
-.tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
-.tabla th { background: #1a4a6e; color: #fff; padding: 8px 12px; text-align: left; font-weight: 500; }
-.tabla td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
-.tabla tr:hover { background: #f8f9fa; }
-.tabla .num { text-align: right; font-variant-numeric: tabular-nums; }
-.tabla .bold { font-weight: 700; }
-
-.tabla-detalle { width: 100%; font-size: 14px; }
-.tabla-detalle th { text-align: left; padding: 6px 12px 6px 0; color: #5f6368; font-weight: 500; width: 40%; }
-.tabla-detalle td { padding: 6px 0; }
-.tabla-detalle .num { text-align: right; }
-.tabla-detalle .bold { font-weight: 700; color: #1a4a6e; }
-
-.venc { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
-.venc-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #e8f0fe; border-radius: 6px; }
-.venc-label { font-size: 13px; color: #5f6368; }
-.venc-monto { font-size: 22px; font-weight: 700; color: #1a4a6e; }
-
-.badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-.badge-ok { background: #e6f4ea; color: #137333; }
-.badge-warn { background: #fce8e6; color: #c5221f; }
-
-.msg { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 14px; }
-.msg.error { background: #fce8e6; color: #c5221f; }
-.msg.success { background: #e6f4ea; color: #137333; }
-.msg.warning { background: #fff3e0; color: #e65100; }
-
-.auth-card { max-width: 400px; margin: 60px auto; background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); text-align: center; }
-.auth-card h1 { font-size: 28px; margin-bottom: 4px; }
-.auth-card h2 { color: #5f6368; font-weight: 400; margin-bottom: 24px; }
-.auth-card form { text-align: left; }
-.auth-card label { display: block; font-size: 13px; font-weight: 600; color: #5f6368; margin-bottom: 4px; margin-top: 12px; }
-.auth-card input { width: 100%; padding: 10px 12px; border: 1px solid #dadce0; border-radius: 6px; font-size: 14px; }
-.auth-card input:focus { outline: none; border-color: #1a73e8; }
-.auth-link { margin-top: 16px; font-size: 13px; color: #5f6368; }
-.auth-link a { color: #1a73e8; }
-
-.btn { padding: 10px 20px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; }
-.btn-primary { background: #1a4a6e; color: #fff; width: 100%; margin-top: 20px; }
-.btn-primary:hover { background: #0d3a5c; }
-.btn-sm { padding: 4px 12px; font-size: 12px; background: #1a73e8; color: #fff; border-radius: 4px; }
-
-/* Liquidación estilo Sheets */
-.tabla-liq { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
-.tabla-liq th { background: #1a4a6e; color: #fff; padding: 8px 10px; text-align: center; font-weight: 500; font-size: 11px; }
-.tabla-liq td { padding: 8px 10px; border: 1px solid #e0e0e0; text-align: center; }
-.tabla-liq .num { text-align: right; font-variant-numeric: tabular-nums; }
-.tabla-liq .col-uf { background: #e8f0fe; font-weight: 700; }
-.tabla-liq .col-deuda { background: #fce8e6; color: #c5221f; }
-.tabla-liq .col-venc { background: #e6f4ea; color: #137333; }
-.tabla-liq .green { color: #137333; }
-.card-venc { text-align: center; border-left: 4px solid #1a73e8; }
-.card-venc h3 { color: #1a73e8; }
-.card-venc .venc-fecha { font-size: 14px; color: #5f6368; margin: 8px 0; }
-.card-venc .venc-monto { font-size: 28px; font-weight: 700; color: #1a4a6e; }
-.card-venc2 { text-align: center; border-left: 4px solid #e65100; }
-.card-venc2 h3 { color: #e65100; }
-.card-venc2 .venc-fecha { font-size: 14px; color: #5f6368; margin: 8px 0; }
-.card-venc2 .venc-monto { font-size: 28px; font-weight: 700; color: #e65100; }
-
-/* Resumen gastos */
-.resumen-card { border-left: 4px solid #1a4a6e; }
-.resumen-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
-.resumen-item { border-radius: 8px; padding: 16px; text-align: center; }
-.resumen-label { font-size: 11px; font-weight: 600; color: #5f6368; text-transform: uppercase; }
-.resumen-valor { font-size: 18px; font-weight: 700; color: #1a1a2e; margin-top: 4px; }
-@media (max-width: 768px) { .resumen-grid { grid-template-columns: repeat(2, 1fr); } }
-
-/* Fila total */
-.fila-total { background: #f1f3f4; border-top: 2px solid #1a4a6e; }
-.fila-total td { font-weight: 700; }
+<% if (gastosExtra.length) { %>
+<div class="card">
+  <h3>Detalle de facturas — Gastos extraordinarios</h3>
+  <div style="overflow-x:auto">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Proveedor</th>
+          <th>Fecha</th>
+          <th class="num">Facturado</th>
+          <th class="num">Debitado</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% gastosExtra.forEach(function(g) { %>
+        <tr>
+          <td><%= g.proveedor %></td>
+          <td><%= g.fecha %></td>
+          <td class="num">$<%= g.importe %></td>
+          <td class="num">$<%= g.montoDebitado || '0' %></td>
+          <td><span class="badge"><%= g.estado %></span></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } %>
+<%- include('footer') %>
