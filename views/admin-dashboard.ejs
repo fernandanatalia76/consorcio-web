@@ -6,82 +6,55 @@
 <div class="grid-2">
   <div class="card">
     <h3>Datos del Consorcio</h3>
-    <table class="tabla-detalle">
-      <tr><th>Nombre</th><td><%= di['Nombre consorcio'] || '—' %></td></tr>
-      <tr><th>Mes activo</th><td><%= di['Mes activo'] || '—' %></td></tr>
-      <tr><th>1er Venc</th><td>Día <%= di['Día 1er vencimiento'] || '6' %></td></tr>
-      <tr><th>2do Venc</th><td>Día <%= di['Día 2do vencimiento'] || '13' %></td></tr>
-      <tr><th>Extraordinaria</th><td>$<%= di['Extraordinaria activa (monto mensual)'] || '0' %></td></tr>
-      <tr><th>Cuotas restantes</th><td><%= di['Extraordinaria Cuotas restantes'] || '0' %></td></tr>
-    </table>
+    <table class="tabla-detalle"><tr><th>Nombre</th><td><%= di['Nombre consorcio']||'—' %></td></tr><tr><th>Mes activo</th><td><%= di['Mes activo']||'—' %></td></tr><tr><th>1er Venc</th><td>Día <%= di['Día 1er vencimiento']||'6' %></td></tr><tr><th>2do Venc</th><td>Día <%= di['Día 2do vencimiento']||'13' %></td></tr><tr><th>Extraordinaria</th><td>$<%= di['Extraordinaria activa (monto mensual)']||'0' %></td></tr></table>
   </div>
-
   <div class="card">
-    <h3>Cash Flow</h3>
-    <% if (cashflow.length) { %>
-    <table class="tabla">
-      <thead><tr><th>Mes</th><th>Créditos</th><th>Débitos</th><th>Saldo Final</th></tr></thead>
-      <tbody>
-        <% cashflow.forEach(function(cf) { %>
-        <tr>
-          <td><%= cf.mes %></td>
-          <td class="num">$<%= cf.creditosCobrados %></td>
-          <td class="num">$<%= cf.debitosProveedores %></td>
-          <td class="num">$<%= cf.saldoFinal %></td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
-    <% } else { %>
-    <p>Sin datos de Cash Flow.</p>
-    <% } %>
+    <h3>🔐 Cambiar contraseña de admin</h3>
+    <form method="POST" action="/admin/cambiar-password" style="display:flex;gap:8px;align-items:end">
+      <div style="flex:1"><label>Nueva contraseña</label><input type="text" name="password" required></div>
+      <button type="submit" class="btn btn-sm" style="margin-bottom:2px">Cambiar</button>
+    </form>
   </div>
 </div>
 
 <div class="card">
   <h3>Usuarios pendientes de activación</h3>
   <% if (pendientes.length) { %>
-  <table class="tabla">
-    <thead><tr><th>UF</th><th>CUIT</th><th>Propietario</th><th>Email</th><th>Acción</th></tr></thead>
-    <tbody>
-      <% pendientes.forEach(function(u) { %>
-      <tr>
-        <td><%= u.uf %></td>
-        <td><%= u.cuit || u.dni || '' %></td>
-        <td><%= u.propietario %></td>
-        <td><%= u.email || '' %></td>
-        <td>
-          <form method="POST" action="/admin/activar" style="display:flex;gap:4px">
-            <input type="hidden" name="uf" value="<%= u.uf %>">
-            <input type="hidden" name="email" value="<%= u.email || '' %>">
-            <input type="text" name="password" placeholder="Contraseña" required style="width:120px">
-            <button type="submit" class="btn btn-sm">Activar y enviar</button>
-          </form>
-        </td>
-      </tr>
-      <% }); %>
-    </tbody>
-  </table>
-  <% } else { %>
-  <p>No hay solicitudes pendientes.</p>
-  <% } %>
+  <div style="overflow-x:auto">
+  <table class="tabla"><thead><tr><th>UF</th><th>CUIT</th><th>Propietario</th><th>Email</th><th>Acción</th></tr></thead><tbody>
+    <% pendientes.forEach(function(u) { %>
+    <tr><td><%= u.uf %></td><td><%= u.cuit||'' %></td><td><%= u.propietario %></td><td><%= u.email||'' %></td>
+    <td><form method="POST" action="/admin/activar" style="display:flex;gap:4px"><input type="hidden" name="uf" value="<%= u.uf %>"><input type="hidden" name="email" value="<%= u.email||'' %>"><input type="text" name="password" placeholder="Contraseña" required style="width:100px"><button type="submit" class="btn btn-sm">Activar</button></form></td></tr>
+    <% }); %>
+  </tbody></table>
+  </div>
+  <% } else { %><p>No hay solicitudes pendientes.</p><% } %>
 </div>
 
 <div class="card">
   <h3>Usuarios activos</h3>
-  <table class="tabla">
-    <thead><tr><th>UF</th><th>Propietario</th><th>Email</th><th>Rol</th><th>Estado</th></tr></thead>
-    <tbody>
-      <% usuarios.filter(function(u){return u.activo}).forEach(function(u) { %>
-      <tr>
-        <td><%= u.uf %></td>
-        <td><%= u.propietario %></td>
-        <td><%= u.email || '' %></td>
-        <td><%= u.rol %></td>
-        <td><span class="badge badge-ok">Activo</span></td>
-      </tr>
-      <% }); %>
-    </tbody>
-  </table>
+  <div style="overflow-x:auto">
+  <table class="tabla"><thead><tr><th>UF</th><th>Propietario</th><th>Email</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+    <% usuarios.filter(function(u){return u.activo;}).forEach(function(u) { %>
+    <tr><td><%= u.uf %></td><td><%= u.propietario %></td><td><%= u.email||'' %></td>
+    <td><span class="badge badge-ok">Activo</span></td>
+    <td style="display:flex;gap:4px">
+      <form method="POST" action="/admin/blanquear" style="display:flex;gap:4px"><input type="hidden" name="uf" value="<%= u.uf %>"><input type="text" name="password" placeholder="Nueva clave" required style="width:90px"><button type="submit" class="btn btn-sm">Blanquear</button></form>
+      <form method="POST" action="/admin/desactivar"><input type="hidden" name="uf" value="<%= u.uf %>"><button type="submit" class="btn btn-sm" style="background:#c5221f" onclick="return confirm('¿Dar de baja a UF <%= u.uf %>?')">Baja</button></form>
+    </td></tr>
+    <% }); %>
+  </tbody></table>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Cash Flow</h3>
+  <% if (cashflow.length) { %>
+  <div style="overflow-x:auto">
+  <table class="tabla"><thead><tr><th>Mes</th><th>Créditos</th><th>Débitos</th><th>Saldo Final</th></tr></thead><tbody>
+    <% cashflow.forEach(function(cf) { %><tr><td><%= cf.mes %></td><td>$<%= cf.creditosCobrados %></td><td>$<%= cf.debitosProveedores %></td><td>$<%= cf.saldoFinal %></td></tr><% }); %>
+  </tbody></table>
+  </div>
+  <% } else { %><p>Sin datos de Cash Flow.</p><% } %>
 </div>
 <%- include('footer') %>
