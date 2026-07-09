@@ -151,9 +151,22 @@ app.get('/gastos', requireLogin, async (req, res) => {
                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
     const gastos = await sheets.leerGastos(mesTxt);
-    res.render('gastos', { gastos, mesLabel: meses[mesGasNum-1] + ' ' + mesGasAnio, error: null });
+
+    // Cash Flow del mes para el resumen
+    const cfData = await sheets.leerCashFlow();
+    const mesNorm = (meses[mesGasNum-1] || '').toLowerCase();
+    const cashflow = cfData.find(cf => {
+      const t = String(cf.mes || '').toLowerCase();
+      return t.includes(mesNorm) && t.includes(String(mesGasAnio));
+    }) || null;
+
+    // Gastos extraordinarios (categoría "Extraordinario" en la misma solapa)
+    const gastosExtra = gastos.filter(g => String(g.categoria || '').toLowerCase().includes('extraordin'));
+    const gastosOrdinarios = gastos.filter(g => !String(g.categoria || '').toLowerCase().includes('extraordin'));
+
+    res.render('gastos', { gastos: gastosOrdinarios, gastosExtra, cashflow, mesLabel: meses[mesGasNum-1] + ' ' + mesGasAnio, error: null });
   } catch(e) {
-    res.render('gastos', { gastos: [], mesLabel: '', error: e.message });
+    res.render('gastos', { gastos: [], gastosExtra: [], cashflow: null, mesLabel: '', error: e.message });
   }
 });
 
