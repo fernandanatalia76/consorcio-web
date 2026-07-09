@@ -61,3 +61,33 @@ h3 { font-size: 15px; margin-bottom: 10px; color: #1a4a6e; }
 .btn-primary { background: #1a4a6e; color: #fff; width: 100%; margin-top: 20px; }
 .btn-primary:hover { background: #0d3a5c; }
 .btn-sm { padding: 4px 12px; font-size: 12px; background: #1a73e8; color: #fff; border-radius: 4px; }
+
+/* Liquidación estilo Sheets */
+.tabla-liq { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+.tabla-liq th { background: #1a4a6e; color: #fff; padding: 8px 10px; text-align: center; font-weight: 500; font-size: 11px; }
+.tabla-liq td { padding: 8px 10px; border: 1px solid #e0e0e0; text-align: center; }
+.tabla-liq .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tabla-liq .col-uf { background: #e8f0fe; font-weight: 700; }
+.tabla-liq .col-deuda { background: #fce8e6; color: #c5221f; }
+.tabla-liq .col-venc { background: #e6f4ea; color: #137333; }
+.tabla-liq .green { color: #137333; }
+.card-venc { text-align: center; border-left: 4px solid #1a73e8; }
+.card-venc h3 { color: #1a73e8; }
+.card-venc .venc-fecha { font-size: 14px; color: #5f6368; margin: 8px 0; }
+.card-venc .venc-monto { font-size: 28px; font-weight: 700; color: #1a4a6e; }
+.card-venc2 { text-align: center; border-left: 4px solid #e65100; }
+.card-venc2 h3 { color: #e65100; }
+.card-venc2 .venc-fecha { font-size: 14px; color: #5f6368; margin: 8px 0; }
+.card-venc2 .venc-monto { font-size: 28px; font-weight: 700; color: #e65100; }
+
+/* Resumen gastos */
+.resumen-card { border-left: 4px solid #1a4a6e; }
+.resumen-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+.resumen-item { border-radius: 8px; padding: 16px; text-align: center; }
+.resumen-label { font-size: 11px; font-weight: 600; color: #5f6368; text-transform: uppercase; }
+.resumen-valor { font-size: 18px; font-weight: 700; color: #1a1a2e; margin-top: 4px; }
+@media (max-width: 768px) { .resumen-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* Fila total */
+.fila-total { background: #f1f3f4; border-top: 2px solid #1a4a6e; }
+.fila-total td { font-weight: 700; }
