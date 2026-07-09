@@ -3,23 +3,32 @@
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (liq.datos.length) { %>
 <div class="card" style="overflow-x:auto">
-  <table class="tabla">
+  <table class="tabla tabla-striped">
     <thead>
-      <tr><th>UF</th><th>Depto</th><th>Propietario</th><th>Adeudadas</th><th>Pagos</th><th>Deuda</th><th>Exp Mes</th><th>Extra</th><th>1er Venc</th><th>2do Venc</th></tr>
+      <tr>
+        <th>UF</th><th>Depto</th><th>Propietario</th><th>% Coef</th>
+        <th>Adeudadas</th><th>Pagos</th><th class="col-deuda">Deuda</th>
+        <th>Exp Mes</th><th>Extra</th><th>Sum</th><th>Destap.</th><th>Bicis</th>
+        <th class="col-venc1">1er Venc</th><th class="col-venc2">2do Venc</th>
+      </tr>
     </thead>
     <tbody>
       <% liq.datos.forEach(function(d) { %>
       <tr>
-        <td><%= d.uf %></td>
+        <td><strong><%= d.uf %></strong></td>
         <td><%= d.depto %></td>
         <td><%= d.propietario %></td>
-        <td class="num">$<%= d.expAdeudadas %></td>
-        <td class="num">$<%= d.pagos %></td>
-        <td class="num bold">$<%= d.deuda %></td>
-        <td class="num">$<%= d.expMes %></td>
-        <td class="num">$<%= d.extraordinaria %></td>
-        <td class="num bold">$<%= d.venc1 %></td>
-        <td class="num">$<%= d.venc2 %></td>
+        <td><%= d.coef %></td>
+        <td>$<%= d.expAdeudadas %></td>
+        <td>$<%= d.pagos %></td>
+        <td class="col-deuda"><strong>$<%= d.deuda %></strong></td>
+        <td>$<%= d.expMes %></td>
+        <td>$<%= d.extraordinaria %></td>
+        <td>$<%= d.sum %></td>
+        <td>$<%= d.destapacion %></td>
+        <td>$<%= d.bicis %></td>
+        <td class="col-venc1"><strong>$<%= d.venc1 %></strong></td>
+        <td class="col-venc2"><strong>$<%= d.venc2 %></strong></td>
       </tr>
       <% }); %>
     </tbody>
