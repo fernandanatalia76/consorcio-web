@@ -1,12 +1,12 @@
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f7fa;color:#1a1a2e}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f7fa;color:#1a1a2e;min-height:100vh;display:flex;flex-direction:column}
 .navbar{background:#1a4a6e;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .nav-brand{font-size:18px;font-weight:700}
 .nav-links{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .nav-links a{color:#cfe2f3;text-decoration:none;font-size:13px}
 .nav-links a:hover{color:#fff}
 .btn-logout{background:rgba(255,255,255,.15);padding:3px 10px;border-radius:4px}
-.container{max-width:1400px;margin:16px auto;padding:0 12px}
+.container{max-width:1400px;margin:16px auto;padding:0 12px;width:100%;flex:1}
 h1{font-size:20px;margin-bottom:14px;color:#1a4a6e}
 h3{font-size:14px;margin-bottom:8px;color:#1a4a6e}
 .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -19,6 +19,8 @@ h3{font-size:14px;margin-bottom:8px;color:#1a4a6e}
 .tabla-striped tbody tr:nth-child(odd){background:#fff}
 .tabla-striped tbody tr:nth-child(even){background:#f8f9fa}
 .tabla-striped tbody tr:hover{background:#e8f0fe}
+.fila-propia{background:#fff8e1!important;outline:2px solid #f9ab00}
+.fila-propia:hover{background:#fff3cd!important}
 .col-deuda{background:#fce8e6!important;color:#c5221f}
 .col-venc1{background:#e6f4ea!important;color:#137333}
 .col-venc2{background:#fff3e0!important;color:#e65100}
@@ -36,13 +38,16 @@ h3{font-size:14px;margin-bottom:8px;color:#1a4a6e}
 .tabla-detalle{width:100%;font-size:13px}
 .tabla-detalle th{text-align:left;padding:5px 8px 5px 0;color:#5f6368;width:40%}
 .tabla-detalle td{padding:5px 0}
-.badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
-.badge-ok{background:#e6f4ea;color:#137333}
-.badge-warn{background:#fce8e6;color:#c5221f}
+.badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:#e8eaed;color:#5f6368;display:inline-block}
+.badge-total,.badge-ok{background:#e6f4ea;color:#137333}
+.badge-parcial{background:#fff3e0;color:#e65100}
+.badge-pendiente,.badge-warn{background:#fce8e6;color:#c5221f}
 .msg{padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:13px}
 .msg.error{background:#fce8e6;color:#c5221f}
 .msg.success{background:#e6f4ea;color:#137333}
 .msg.warning{background:#fff3e0;color:#e65100}
+.nota{font-size:11px;color:#5f6368;margin-top:8px}
+.deuda-box{margin-top:12px;padding:10px;background:#fff3e0;border-radius:6px;text-align:center}
 .auth-card{max-width:400px;margin:40px auto;background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.1);text-align:center}
 .auth-card h1{font-size:26px;margin-bottom:4px}
 .auth-card h2{color:#5f6368;font-weight:400;margin-bottom:20px;font-size:16px}
@@ -61,6 +66,9 @@ h3{font-size:14px;margin-bottom:8px;color:#1a4a6e}
 .resumen-item{border-radius:8px;padding:12px;text-align:center}
 .resumen-label{font-size:10px;font-weight:600;color:#5f6368;text-transform:uppercase}
 .resumen-valor{font-size:16px;font-weight:700;color:#1a1a2e;margin-top:3px}
+.site-footer{text-align:center;padding:14px;font-size:11px;color:#9aa0a6}
+
+/* ============ RESPONSIVE ============ */
 @media(max-width:768px){
   .resumen-grid{grid-template-columns:repeat(2,1fr)}
   .navbar{padding:8px 12px}
@@ -68,8 +76,24 @@ h3{font-size:14px;margin-bottom:8px;color:#1a4a6e}
   .nav-links a{font-size:11px}
   .container{padding:0 8px}
   h1{font-size:17px}
-  .tabla{font-size:11px}
-  .tabla th,.tabla td{padding:4px 5px}
   .card-venc1 .venc-monto,.card-venc2 .venc-monto{font-size:20px}
   .auth-card{margin:20px 10px;padding:20px}
+}
+
+/* Tablas anchas -> tarjetas apiladas en el celular.
+   Cada celda usa su data-label como etiqueta, asi se ve TODA la info. */
+@media(max-width:640px){
+  table.rtable thead{position:absolute;left:-9999px}
+  table.rtable,table.rtable tbody,table.rtable tr,table.rtable td{display:block;width:100%}
+  table.rtable tr{margin-bottom:12px;border:1px solid #dfe1e5;border-radius:8px;overflow:hidden;background:#fff!important}
+  table.rtable tr.fila-propia{outline:2px solid #f9ab00}
+  table.rtable td{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:right;padding:8px 12px;border:none;border-bottom:1px solid #f0f0f0;white-space:normal}
+  table.rtable td:last-child{border-bottom:none}
+  table.rtable td::before{content:attr(data-label);font-weight:600;color:#5f6368;text-align:left;flex:0 0 45%}
+  /* En modo tarjeta anulamos los fondos de columna para que se lean bien */
+  table.rtable td.col-deuda,table.rtable td.col-venc1,table.rtable td.col-venc2{background:transparent!important}
+  table.rtable td.col-deuda{color:#c5221f}
+  table.rtable td.col-venc1{color:#137333}
+  table.rtable td.col-venc2{color:#e65100}
+  table.rtable td form{justify-content:flex-end}
 }
