@@ -42,12 +42,13 @@ app.post('/login', function(req, res) {
 app.get('/registrar', function(req, res) { res.render('registrar', { error: null, ok: false }); });
 app.post('/registrar', async function(req, res) {
   try {
-    var ufs = await sheets.leerUFs();
     var uf = String(req.body.uf).trim();
-    var dni = String(req.body.dni).replace(/\D/g, '');
-    var match = ufs.find(function(u) { return u.uf === uf && String(u.cuit || '').replace(/\D/g, '').indexOf(dni) !== -1; });
-    if (!match) return res.render('registrar', { error: 'UF o DNI no encontrado.', ok: false });
-    var r = authLib.registrar(uf, dni, match.propietario);
+    var cuit = String(req.body.cuit || '').replace(/\D/g, '');
+    if (cuit.length !== 11) return res.render('registrar', { error: 'El CUIT debe tener exactamente 11 dígitos.', ok: false });
+    var ufs = await sheets.leerUFs();
+    var match = ufs.find(function(u) { return u.uf === uf && String(u.cuit || '').replace(/\D/g, '') === cuit; });
+    if (!match) return res.render('registrar', { error: 'No se encontró la UF ' + uf + ' con ese CUIT en el sistema. Contactá al administrador.', ok: false });
+    var r = authLib.registrar(uf, cuit, match.propietario);
     if (!r.ok) return res.render('registrar', { error: r.error, ok: false });
     res.render('registrar', { error: null, ok: true });
   } catch(e) { res.render('registrar', { error: e.message, ok: false }); }
