@@ -1,5 +1,4 @@
 node_modules/
-db/database.sqlite
 .env
-*.json
-!package.json
+*.log
+
