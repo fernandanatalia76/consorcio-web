@@ -14,7 +14,17 @@
         <td><%= g.fecha %></td>
         <td class="num">$<%= g.importe %></td>
         <td class="num">$<%= g.montoDebitado || '0' %></td>
-        <td><%= g.estado %></td>
+        <td>
+          <% if (g.estado && g.estado.indexOf('Validado') !== -1) { %>
+            <span class="badge badge-ok"><%= g.estado %></span>
+          <% } else if (g.estado && g.estado.indexOf('Sin') !== -1) { %>
+            <span class="badge badge-warn"><%= g.estado %></span>
+          <% } else if (g.estado && g.estado.indexOf('No validado') !== -1) { %>
+            <span class="badge badge-warn"><%= g.estado %></span>
+          <% } else { %>
+            <span class="badge"><%= g.estado %></span>
+          <% } %>
+        </td>
       </tr>
       <% }); %>
     </tbody>
