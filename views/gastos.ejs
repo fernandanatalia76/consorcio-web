@@ -1,128 +1,26 @@
 <%- include('header') %>
-<h1>Gastos y Saldos — <%= mesLabel %></h1>
+<h1>Gastos del Mes — <%= mesLabel %></h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
-
-<% if (cashflow) { %>
-<div class="card resumen-card">
-  <h3>Resumen — Gastos ordinarios <%= mesLabel %></h3>
-  <div class="resumen-grid">
-    <div class="resumen-item" style="background:#f1f3f4">
-      <div class="resumen-label">Saldo inicial</div>
-      <div class="resumen-valor">$<%= cashflow.saldoInicial || '0' %></div>
-    </div>
-    <div class="resumen-item" style="background:#e6f4ea">
-      <div class="resumen-label">Créditos cobrados</div>
-      <div class="resumen-valor">$<%= cashflow.creditosCobrados || '0' %></div>
-    </div>
-    <div class="resumen-item" style="background:#fce8e6">
-      <div class="resumen-label">Total débitos</div>
-      <div class="resumen-valor">$<%= cashflow.debitosProveedores || '0' %></div>
-    </div>
-    <div class="resumen-item" style="background:#e8f0fe">
-      <div class="resumen-label">Saldo final</div>
-      <div class="resumen-valor">$<%= cashflow.saldoFinal || '0' %></div>
-    </div>
-  </div>
-</div>
-<% } %>
-
 <% if (gastos.length) { %>
 <div class="card">
-  <h3>Detalle de facturas — Gastos ordinarios</h3>
-  <div style="overflow-x:auto">
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th>Proveedor</th>
-          <th>Fecha</th>
-          <th class="num">Facturado</th>
-          <th class="num">Debitado</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% gastos.forEach(function(g) { %>
-        <tr>
-          <td><%= g.proveedor %></td>
-          <td><%= g.fecha %></td>
-          <td class="num">$<%= g.importe %></td>
-          <td class="num">$<%= g.montoDebitado || '0' %></td>
-          <td>
-            <% if (g.estado && g.estado.indexOf('Validado') !== -1) { %>
-              <span class="badge badge-ok"><%= g.estado %></span>
-            <% } else if (g.estado && g.estado.indexOf('Sin') !== -1) { %>
-              <span class="badge badge-warn"><%= g.estado %></span>
-            <% } else { %>
-              <span class="badge"><%= g.estado %></span>
-            <% } %>
-          </td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
-  </div>
+  <table class="tabla">
+    <thead>
+      <tr><th>Proveedor</th><th>Fecha</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr>
+    </thead>
+    <tbody>
+      <% gastos.forEach(function(g) { %>
+      <tr>
+        <td><%= g.proveedor %></td>
+        <td><%= g.fecha %></td>
+        <td class="num">$<%= g.importe %></td>
+        <td class="num">$<%= g.montoDebitado || '0' %></td>
+        <td><%= g.estado %></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
 </div>
 <% } else if (!error) { %>
-<div class="msg warning">No hay gastos ordinarios cargados para este mes.</div>
-<% } %>
-
-<% if (impuestos.length) { %>
-<div class="card">
-  <h3>Detalle — Impuestos y Comisiones bancarias</h3>
-  <div style="overflow-x:auto">
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th>Concepto</th>
-          <th>Fecha</th>
-          <th class="num">Facturado</th>
-          <th class="num">Debitado</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% impuestos.forEach(function(g) { %>
-        <tr>
-          <td><%= g.proveedor %></td>
-          <td><%= g.fecha %></td>
-          <td class="num">$<%= g.importe %></td>
-          <td class="num">$<%= g.montoDebitado || '0' %></td>
-          <td><span class="badge badge-ok"><%= g.estado %></span></td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
-  </div>
-</div>
-<% } %>
-
-<% if (gastosExtra.length) { %>
-<div class="card">
-  <h3>Detalle de facturas — Gastos extraordinarios</h3>
-  <div style="overflow-x:auto">
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th>Proveedor</th>
-          <th>Fecha</th>
-          <th class="num">Facturado</th>
-          <th class="num">Debitado</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% gastosExtra.forEach(function(g) { %>
-        <tr>
-          <td><%= g.proveedor %></td>
-          <td><%= g.fecha %></td>
-          <td class="num">$<%= g.importe %></td>
-          <td class="num">$<%= g.montoDebitado || '0' %></td>
-          <td><span class="badge"><%= g.estado %></span></td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
-  </div>
-</div>
+<div class="msg warning">No hay gastos cargados para este mes.</div>
 <% } %>
 <%- include('footer') %>
