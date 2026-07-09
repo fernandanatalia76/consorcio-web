@@ -48,8 +48,30 @@ app.post('/registrar', async function(req, res) {
     var ufs = await sheets.leerUFs();
     var match = ufs.find(function(u) { return u.uf === uf && String(u.cuit || '').replace(/\D/g, '') === cuit; });
     if (!match) return res.render('registrar', { error: 'No se encontró la UF ' + uf + ' con ese CUIT en el sistema. Contactá al administrador.', ok: false });
-    var r = authLib.registrar(uf, cuit, match.propietario);
+    var r = authLib.registrar(uf, cuit, match.propietario, req.body.email);
     if (!r.ok) return res.render('registrar', { error: r.error, ok: false });
+    // Notificar al admin por email que hay una solicitud nueva
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      try {
+        var nodemailer = require('nodemailer');
+        var transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+        });
+        await transporter.sendMail({
+          from: process.env.SMTP_USER,
+          to: process.env.ADMIN_EMAIL || process.env.SMTP_USER,
+          subject: 'Nueva solicitud de acceso — UF ' + uf,
+          text: 'Se registró una nueva solicitud de acceso al portal:\n\n' +
+                'UF: ' + uf + '\n' +
+                'Propietario: ' + (match.propietario || '') + '\n' +
+                'CUIT: ' + cuit + '\n' +
+                'Email: ' + (req.body.email || '') + '\n\n' +
+                'Ingresá al panel de admin para activar la cuenta:\n' +
+                (process.env.SITE_URL || 'https://consorcio-web.onrender.com') + '/admin'
+        });
+      } catch(e) { console.log('Error enviando notificación al admin:', e.message); }
+    }
     res.render('registrar', { error: null, ok: true });
   } catch(e) { res.render('registrar', { error: e.message, ok: false }); }
 });
@@ -97,8 +119,31 @@ app.get('/admin', requireAdmin, async function(req, res) {
   } catch(e) { res.render('admin-dashboard', { di:{}, cashflow:[], usuarios:[], pendientes:[], error:e.message, msg:null }); }
 });
 
-app.post('/admin/activar', requireAdmin, function(req, res) {
-  authLib.activarUsuario(req.body.uf, req.body.password);
+app.post('/admin/activar', requireAdmin, async function(req, res) {
+  var uf = req.body.uf;
+  var pw = req.body.password;
+  var email = req.body.email;
+  authLib.activarUsuario(uf, pw);
+  // Enviar contraseña por email si hay email y credenciales configuradas
+  if (email && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    try {
+      var nodemailer = require('nodemailer');
+      var transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+      });
+      await transporter.sendMail({
+        from: process.env.SMTP_USER,
+        to: email,
+        subject: 'Tu acceso al portal del Consorcio',
+        text: 'Hola,\n\nTu cuenta fue activada.\n\n' +
+              'Ingresá a: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') + '\n' +
+              'Usuario (N° de UF): ' + uf + '\n' +
+              'Contraseña: ' + pw + '\n\n' +
+              'Saludos,\nAdministración del Consorcio'
+      });
+    } catch(e) { console.log('Error enviando email:', e.message); }
+  }
   res.redirect('/admin');
 });
 
