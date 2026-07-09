@@ -1,32 +1,89 @@
 <%- include('header') %>
-<h1>Gastos y Saldos — <%= mesLabel %></h1>
+<h1>Panel de Administración</h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
-<% if (cashflow) { %>
-<div class="card resumen-card">
-  <h3>Resumen — <%= mesLabel %></h3>
-  <div class="resumen-grid">
-    <div class="resumen-item" style="background:#f1f3f4"><div class="resumen-label">Saldo inicial</div><div class="resumen-valor">$<%= cashflow.saldoInicial||'0' %></div></div>
-    <div class="resumen-item" style="background:#e6f4ea"><div class="resumen-label">Créditos cobrados</div><div class="resumen-valor">$<%= cashflow.creditosCobrados||'0' %></div></div>
-    <div class="resumen-item" style="background:#fce8e6"><div class="resumen-label">Total débitos</div><div class="resumen-valor">$<%= cashflow.debitosProveedores||'0' %></div></div>
-    <div class="resumen-item" style="background:#e8f0fe"><div class="resumen-label">Saldo final</div><div class="resumen-valor">$<%= cashflow.saldoFinal||'0' %></div></div>
+<% if (msg) { %><div class="msg success"><%= msg %></div><% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Datos del Consorcio</h3>
+    <table class="tabla-detalle"><tr><th>Nombre</th><td><%= di['Nombre consorcio']||'—' %></td></tr><tr><th>Mes activo</th><td><%= di['Mes activo']||'—' %></td></tr><tr><th>1er Venc</th><td>Día <%= di['Día 1er vencimiento']||'6' %></td></tr><tr><th>2do Venc</th><td>Día <%= di['Día 2do vencimiento']||'13' %></td></tr><tr><th>Extraordinaria</th><td>$<%= di['Extraordinaria activa (monto mensual)']||'0' %></td></tr></table>
   </div>
-  <% if (cashflow.deudaProveedores && cashflow.deudaProveedores !== '0' && cashflow.deudaProveedores !== '$0,00') { %>
-  <div style="margin-top:12px;padding:10px;background:#fff3e0;border-radius:6px;text-align:center"><strong>Deuda a proveedores:</strong> $<%= cashflow.deudaProveedores %></div>
-  <% } %>
+  <div class="card">
+    <h3>🔐 Cambiar contraseña de admin</h3>
+    <form method="POST" action="/admin/cambiar-password" style="display:flex;gap:8px;align-items:end">
+      <div style="flex:1"><label>Nueva contraseña</label><input type="text" name="password" required></div>
+      <button type="submit" class="btn btn-sm" style="margin-bottom:2px">Cambiar</button>
+    </form>
+    <p class="nota" style="margin-top:8px">Queda guardada en la planilla (no se pierde al reiniciar).</p>
+
+    <h3 style="margin-top:16px">✉️ Probar envío de email</h3>
+    <form method="POST" action="/admin/test-email" style="display:flex;gap:8px;align-items:end">
+      <div style="flex:1"><label>Enviar prueba a</label><input type="email" name="destino" placeholder="(por defecto, el admin)"></div>
+      <button type="submit" class="btn btn-sm" style="margin-bottom:2px">Enviar prueba</button>
+    </form>
+  </div>
 </div>
-<% } %>
-<% if (gastos.length) { %>
-<div class="card"><h3>Detalle de facturas — Gastos ordinarios</h3><div style="overflow-x:auto">
-  <table class="tabla tabla-striped"><thead><tr><th>Proveedor</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
-    <% gastos.forEach(function(g) { %><tr><td><%= g.proveedor %></td><td><%= g.fecha %></td><td>$<%= g.importe %></td><td>$<%= g.montoDebitado||'0' %></td>
-    <td><% if(g.estado&&g.estado.indexOf('Validado')!==-1){%><span class="badge badge-ok"><%= g.estado %></span><%}else if(g.estado&&(g.estado.indexOf('Sin')!==-1||g.estado.indexOf('No ')!==-1)){%><span class="badge badge-warn"><%= g.estado %></span><%}else{%><span class="badge"><%= g.estado %></span><%}%></td></tr>
+
+<div class="card">
+  <h3>Usuarios pendientes de activación</h3>
+  <% if (pendientes.length) { %>
+  <div style="overflow-x:auto">
+  <table class="tabla rtable"><thead><tr><th>UF</th><th>CUIT</th><th>Propietario</th><th>Email</th><th>Acción</th></tr></thead><tbody>
+    <% pendientes.forEach(function(u) { %>
+    <tr>
+      <td data-label="UF"><%= u.uf %></td>
+      <td data-label="CUIT"><%= u.cuit||'' %></td>
+      <td data-label="Propietario"><%= u.propietario %></td>
+      <td data-label="Email"><%= u.email||'' %></td>
+      <td data-label="Acción"><form method="POST" action="/admin/activar" style="display:flex;gap:4px;justify-content:flex-end"><input type="hidden" name="uf" value="<%= u.uf %>"><input type="text" name="password" placeholder="Contraseña" required style="width:120px"><button type="submit" class="btn btn-sm">Activar</button></form></td>
+    </tr>
     <% }); %>
-  </tbody></table></div></div>
-<% } %>
-<% if (impuestos.length) { %>
-<div class="card"><h3>Impuestos y Comisiones bancarias</h3><div style="overflow-x:auto">
-  <table class="tabla"><thead><tr><th>Concepto</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr></thead><tbody>
-    <% impuestos.forEach(function(g) { %><tr><td><%= g.proveedor %></td><td>$<%= g.importe %></td><td>$<%= g.montoDebitado||'0' %></td><td><span class="badge badge-ok"><%= g.estado %></span></td></tr><% }); %>
-  </tbody></table></div></div>
-<% } %>
+  </tbody></table>
+  </div>
+  <% } else { %><p>No hay solicitudes pendientes.</p><% } %>
+</div>
+
+<div class="card">
+  <h3>Usuarios activos</h3>
+  <% var activos = usuarios.filter(function(u){return u.activo;}); %>
+  <% if (activos.length) { %>
+  <div style="overflow-x:auto">
+  <table class="tabla rtable"><thead><tr><th>UF</th><th>Propietario</th><th>Email</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+    <% activos.forEach(function(u) { %>
+    <tr>
+      <td data-label="UF"><%= u.uf %></td>
+      <td data-label="Propietario"><%= u.propietario %></td>
+      <td data-label="Email"><%= u.email||'' %></td>
+      <td data-label="Estado"><span class="badge badge-total">Activo</span></td>
+      <td data-label="Acciones">
+        <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap">
+        <form method="POST" action="/admin/blanquear" style="display:flex;gap:4px"><input type="hidden" name="uf" value="<%= u.uf %>"><input type="text" name="password" placeholder="Nueva clave" required style="width:100px"><button type="submit" class="btn btn-sm">Blanquear</button></form>
+        <form method="POST" action="/admin/desactivar"><input type="hidden" name="uf" value="<%= u.uf %>"><button type="submit" class="btn btn-sm" style="background:#c5221f" onclick="return confirm('¿Dar de baja a UF <%= u.uf %>?')">Baja</button></form>
+        </div>
+      </td>
+    </tr>
+    <% }); %>
+  </tbody></table>
+  </div>
+  <% } else { %><p>No hay usuarios activos.</p><% } %>
+</div>
+
+<div class="card">
+  <h3>Cash Flow</h3>
+  <% if (cashflow.length) { %>
+  <div style="overflow-x:auto">
+  <table class="tabla rtable"><thead><tr><th>Mes</th><th>Créditos</th><th>Débitos</th><th>Saldo Final</th><th>Deuda proveedores</th></tr></thead><tbody>
+    <% cashflow.forEach(function(cf) { %>
+    <tr>
+      <td data-label="Mes"><%= cf.mes %></td>
+      <td data-label="Créditos">$<%= cf.creditosCobrados %></td>
+      <td data-label="Débitos">$<%= cf.debitosProveedores %></td>
+      <td data-label="Saldo Final">$<%= cf.saldoFinal %></td>
+      <td data-label="Deuda proveedores">$<%= cf.deudaProveedores||'0' %></td>
+    </tr>
+    <% }); %>
+  </tbody></table>
+  </div>
+  <% } else { %><p>Sin datos de Cash Flow.</p><% } %>
+</div>
 <%- include('footer') %>

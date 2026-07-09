@@ -1,40 +1,45 @@
 <%- include('header') %>
 <h1>Liquidación Completa — <%= mesLabel %></h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
-<% if (liq.datos.length) { %>
+<% if (typeof miUf !== 'undefined' && miUf) { %>
+<div class="msg success" style="background:#e8f0fe;color:#1a4a6e">Tu unidad (UF <%= miUf %>) aparece resaltada en la tabla.</div>
+<% } %>
+
+<% if (liq && liq.datos && liq.datos.length) { %>
 <div class="card" style="overflow-x:auto">
-  <table class="tabla tabla-striped">
+  <table class="tabla tabla-striped rtable">
     <thead>
       <tr>
         <th>UF</th><th>Depto</th><th>Propietario</th><th>% Coef</th>
-        <th>Adeudadas</th><th>Pagos</th><th class="col-deuda">Deuda</th>
-        <th>Exp Mes</th><th>Extra</th><th>Sum</th><th>Destap.</th><th>Bicis</th>
+        <th>Exp. Adeudadas</th><th>Pagos</th><th class="col-deuda">Deuda</th>
+        <th>Exp de Mes</th><th>Extraordinaria</th><th>Sum</th>
+        <th>Destapación</th><th>Bicis</th>
         <th class="col-venc1">1er Venc</th><th class="col-venc2">2do Venc</th>
       </tr>
     </thead>
     <tbody>
       <% liq.datos.forEach(function(d) { %>
-      <tr>
-        <td><strong><%= d.uf %></strong></td>
-        <td><%= d.depto %></td>
-        <td><%= d.propietario %></td>
-        <td><%= d.coef %></td>
-        <td>$<%= d.expAdeudadas %></td>
-        <td>$<%= d.pagos %></td>
-        <td class="col-deuda"><strong>$<%= d.deuda %></strong></td>
-        <td>$<%= d.expMes %></td>
-        <td>$<%= d.extraordinaria %></td>
-        <td>$<%= d.sum %></td>
-        <td>$<%= d.destapacion %></td>
-        <td>$<%= d.bicis %></td>
-        <td class="col-venc1"><strong>$<%= d.venc1 %></strong></td>
-        <td class="col-venc2"><strong>$<%= d.venc2 %></strong></td>
+      <tr<% if (typeof miUf !== 'undefined' && miUf && d.uf === miUf) { %> class="fila-propia"<% } %>>
+        <td data-label="UF"><strong><%= d.uf %></strong></td>
+        <td data-label="Depto"><%= d.depto %></td>
+        <td data-label="Propietario"><%= d.propietario %></td>
+        <td data-label="% Coef"><%= d.coef %></td>
+        <td data-label="Exp. Adeudadas">$<%= d.expAdeudadas %></td>
+        <td data-label="Pagos">$<%= d.pagos %></td>
+        <td data-label="Deuda" class="col-deuda"><strong>$<%= d.deuda %></strong></td>
+        <td data-label="Exp de Mes">$<%= d.expMes %></td>
+        <td data-label="Extraordinaria">$<%= d.extraordinaria %></td>
+        <td data-label="Sum">$<%= d.sum %></td>
+        <td data-label="Destapación">$<%= d.destapacion %></td>
+        <td data-label="Bicis">$<%= d.bicis %></td>
+        <td data-label="1er Venc" class="col-venc1"><strong>$<%= d.venc1 %></strong></td>
+        <td data-label="2do Venc" class="col-venc2"><strong>$<%= d.venc2 %></strong></td>
       </tr>
       <% }); %>
     </tbody>
   </table>
 </div>
 <% } else if (!error) { %>
-<div class="msg warning">No se encontró la solapa de liquidación para este mes.</div>
+<div class="msg warning">No hay datos de liquidación para <%= mesLabel %>.</div>
 <% } %>
 <%- include('footer') %>

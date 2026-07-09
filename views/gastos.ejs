@@ -11,22 +11,35 @@
     <div class="resumen-item" style="background:#e8f0fe"><div class="resumen-label">Saldo final</div><div class="resumen-valor">$<%= cashflow.saldoFinal||'0' %></div></div>
   </div>
   <% if (cashflow.deudaProveedores && cashflow.deudaProveedores !== '0' && cashflow.deudaProveedores !== '$0,00') { %>
-  <div style="margin-top:12px;padding:10px;background:#fff3e0;border-radius:6px;text-align:center"><strong>Deuda a proveedores:</strong> $<%= cashflow.deudaProveedores %></div>
+  <div class="deuda-box"><strong>Deuda a proveedores:</strong> $<%= cashflow.deudaProveedores %><% if (cashflow.facturas) { %> <span class="nota">(<%= cashflow.facturas %>)</span><% } %></div>
   <% } %>
 </div>
 <% } %>
 <% if (gastos.length) { %>
 <div class="card"><h3>Detalle de facturas — Gastos ordinarios</h3><div style="overflow-x:auto">
-  <table class="tabla tabla-striped"><thead><tr><th>Proveedor</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
-    <% gastos.forEach(function(g) { %><tr><td><%= g.proveedor %></td><td><%= g.fecha %></td><td>$<%= g.importe %></td><td>$<%= g.montoDebitado||'0' %></td>
-    <td><% if(g.estado&&g.estado.indexOf('Validado')!==-1){%><span class="badge badge-ok"><%= g.estado %></span><%}else if(g.estado&&(g.estado.indexOf('Sin')!==-1||g.estado.indexOf('No ')!==-1)){%><span class="badge badge-warn"><%= g.estado %></span><%}else{%><span class="badge"><%= g.estado %></span><%}%></td></tr>
+  <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>Fecha</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr></thead><tbody>
+    <% gastos.forEach(function(g) { %>
+    <tr>
+      <td data-label="Proveedor"><%= g.proveedor %></td>
+      <td data-label="Fecha"><%= g.fecha %></td>
+      <td data-label="Importe">$<%= g.importe %></td>
+      <td data-label="Debitado">$<%= g.montoDebitado||'0' %></td>
+      <td data-label="Estado"><% if(g.estado&&g.estado.indexOf('Validado')!==-1){%><span class="badge badge-total"><%= g.estado %></span><%}else if(g.estado&&(g.estado.indexOf('Sin')!==-1||g.estado.indexOf('No ')!==-1)){%><span class="badge badge-pendiente"><%= g.estado %></span><%}else{%><span class="badge"><%= g.estado %></span><%}%></td>
+    </tr>
     <% }); %>
   </tbody></table></div></div>
 <% } %>
 <% if (impuestos.length) { %>
 <div class="card"><h3>Impuestos y Comisiones bancarias</h3><div style="overflow-x:auto">
-  <table class="tabla"><thead><tr><th>Concepto</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr></thead><tbody>
-    <% impuestos.forEach(function(g) { %><tr><td><%= g.proveedor %></td><td>$<%= g.importe %></td><td>$<%= g.montoDebitado||'0' %></td><td><span class="badge badge-ok"><%= g.estado %></span></td></tr><% }); %>
+  <table class="tabla rtable"><thead><tr><th>Concepto</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr></thead><tbody>
+    <% impuestos.forEach(function(g) { %>
+    <tr>
+      <td data-label="Concepto"><%= g.proveedor %></td>
+      <td data-label="Importe">$<%= g.importe %></td>
+      <td data-label="Debitado">$<%= g.montoDebitado||'0' %></td>
+      <td data-label="Estado"><span class="badge badge-total"><%= g.estado %></span></td>
+    </tr>
+    <% }); %>
   </tbody></table></div></div>
 <% } %>
 <%- include('footer') %>

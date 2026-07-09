@@ -1,25 +1,38 @@
 <%- include('header') %>
-<h1>Historial de Pagos</h1>
+<h1>Mis Pagos</h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
-<% if (pagos.length) { %>
-<div class="card">
-  <table class="tabla">
+
+<% if (pagos && pagos.length) { %>
+<div class="card" style="overflow-x:auto">
+  <table class="tabla tabla-striped rtable">
     <thead>
-      <tr><th>Estado</th><th>Monto Cobrado</th><th>Fecha Pago</th><th>Pendiente</th></tr>
+      <tr>
+        <th>Propietario</th>
+        <th>Exp. del mes</th>
+        <th>Total a pagar</th>
+        <th>Cobrado</th>
+        <th>Pendiente</th>
+        <th>Fecha de pago</th>
+        <th>Estado</th>
+      </tr>
     </thead>
     <tbody>
-      <% pagos.forEach(function(p) { %>
+      <% pagos.forEach(function(p) { var est = p.estadoCalc || {clave:'pendiente',label:'Pendiente'}; %>
       <tr>
-        <td><span class="badge <%= p.estado === 'Pago total' ? 'badge-ok' : 'badge-warn' %>"><%= p.estado || 'Pendiente' %></span></td>
-        <td class="num">$<%= p.montoCobrado || '0' %></td>
-        <td><%= p.fechaPago || '—' %></td>
-        <td class="num">$<%= p.montoPendiente || '0' %></td>
+        <td data-label="Propietario"><%= p.propietario %></td>
+        <td data-label="Exp. del mes">$<%= p.expMes || '0' %></td>
+        <td data-label="Total a pagar">$<%= p.total1 || '0' %></td>
+        <td data-label="Cobrado">$<%= p.montoCobrado || '0' %></td>
+        <td data-label="Pendiente">$<%= p.montoPendiente || '0' %></td>
+        <td data-label="Fecha de pago"><%= p.fechaPago || '—' %></td>
+        <td data-label="Estado"><span class="badge badge-<%= est.clave %>"><%= est.label %></span></td>
       </tr>
       <% }); %>
     </tbody>
   </table>
 </div>
+<p class="nota">El estado se calcula así: <strong>Pagado</strong> si no queda saldo pendiente, <strong>Parcial</strong> si pagaste una parte, <strong>Pendiente</strong> si aún no registra cobros.</p>
 <% } else if (!error) { %>
-<div class="msg warning">No se encontraron pagos registrados para tu UF.</div>
+<div class="msg warning">Todavía no hay pagos registrados para tu UF.</div>
 <% } %>
 <%- include('footer') %>
