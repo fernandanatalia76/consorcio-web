@@ -145,39 +145,53 @@ app.get('/admin', requireAdmin, async function (req, res) {
     var cf = await sheets.leerCashFlow();
     var usuarios = await authLib.listarUsuarios();
     var pendientes = await authLib.listarPendientes();
-    res.render('admin-dashboard', { di: di, cashflow: cf, usuarios: usuarios, pendientes: pendientes, error: null, msg: req.query.msg || null });
-  } catch (e) { res.render('admin-dashboard', { di: {}, cashflow: [], usuarios: [], pendientes: [], error: e.message, msg: null }); }
+    // "flash": mensaje/credenciales que dura una sola vista
+    var flash = req.session.flash || null;
+    req.session.flash = null;
+    res.render('admin-dashboard', { di: di, cashflow: cf, usuarios: usuarios, pendientes: pendientes, error: null, msg: req.query.msg || null, flash: flash });
+  } catch (e) { res.render('admin-dashboard', { di: {}, cashflow: [], usuarios: [], pendientes: [], error: e.message, msg: null, flash: null }); }
 });
 
 app.post('/admin/activar', requireAdmin, async function (req, res) {
-  var r = await authLib.activarUsuario(req.body.uf, req.body.password);
+  var uf = req.body.uf, pw = req.body.password;
+  var r = await authLib.activarUsuario(uf, pw);
+  var mailInfo = { intentado: false, ok: false, error: null, email: r.email || null };
   if (r.ok && r.email) {
-    await mailer.enviar(r.email, 'Tu acceso al portal del Consorcio',
+    mailInfo.intentado = true;
+    var m = await mailer.enviar(r.email, 'Tu acceso al portal del Consorcio',
       'Hola,\n\nTu cuenta fue activada.\n\nIngresá a: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') +
-      '\nUsuario (UF): ' + req.body.uf + '\nContraseña: ' + req.body.password + '\n\nSaludos,\nAdministración del Consorcio');
+      '\nUsuario (UF): ' + uf + '\nContraseña: ' + pw + '\n\nSaludos,\nAdministración del Consorcio');
+    mailInfo.ok = m.ok; mailInfo.error = m.error || null;
   }
-  res.redirect('/admin?msg=Usuario+' + encodeURIComponent(req.body.uf) + '+activado');
+  req.session.flash = { tipo: 'credenciales', accion: 'activado', uf: uf, password: pw, mail: mailInfo };
+  res.redirect('/admin');
 });
 
 app.post('/admin/desactivar', requireAdmin, async function (req, res) {
   await authLib.desactivarUsuario(req.body.uf);
-  res.redirect('/admin?msg=Usuario+' + encodeURIComponent(req.body.uf) + '+dado+de+baja');
+  req.session.flash = { tipo: 'aviso', texto: 'Usuario ' + req.body.uf + ' dado de baja' };
+  res.redirect('/admin');
 });
 
 app.post('/admin/eliminar', requireAdmin, async function (req, res) {
   var r = await authLib.eliminarUsuario(req.body.uf);
-  var msg = r.ok ? 'Usuario ' + req.body.uf + ' eliminado' : 'Error: ' + r.error;
-  res.redirect('/admin?msg=' + encodeURIComponent(msg));
+  req.session.flash = { tipo: 'aviso', texto: r.ok ? ('Usuario ' + req.body.uf + ' eliminado') : ('Error: ' + r.error) };
+  res.redirect('/admin');
 });
 
 app.post('/admin/blanquear', requireAdmin, async function (req, res) {
-  var r = await authLib.blanquearClave(req.body.uf, req.body.password);
+  var uf = req.body.uf, pw = req.body.password;
+  var r = await authLib.blanquearClave(uf, pw);
+  var mailInfo = { intentado: false, ok: false, error: null, email: r.email || null };
   if (r.ok && r.email) {
-    await mailer.enviar(r.email, 'Nueva contraseña — Portal del Consorcio',
+    mailInfo.intentado = true;
+    var m = await mailer.enviar(r.email, 'Nueva contraseña — Portal del Consorcio',
       'Hola,\n\nTu contraseña fue actualizada.\n\nIngresá a: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') +
-      '\nUsuario (UF): ' + req.body.uf + '\nNueva contraseña: ' + req.body.password + '\n\nSaludos,\nAdministración del Consorcio');
+      '\nUsuario (UF): ' + uf + '\nNueva contraseña: ' + pw + '\n\nSaludos,\nAdministración del Consorcio');
+    mailInfo.ok = m.ok; mailInfo.error = m.error || null;
   }
-  res.redirect('/admin?msg=Clave+blanqueada+para+UF+' + encodeURIComponent(req.body.uf));
+  req.session.flash = { tipo: 'credenciales', accion: 'blanqueada', uf: uf, password: pw, mail: mailInfo };
+  res.redirect('/admin');
 });
 
 app.post('/admin/cambiar-password', requireAdmin, async function (req, res) {
