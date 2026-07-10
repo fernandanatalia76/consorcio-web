@@ -1,30 +1,41 @@
 <%- include('header') %>
+<% function money(v){ v=String(v==null?'':v).trim().replace(/^\$\s*/,''); return '$'+(v||'0'); } %>
 <h1>Panel de Administración</h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (msg) { %><div class="msg success"><%= msg %></div><% } %>
 
-<div class="card">
-  <h3>Cash Flow</h3>
-  <% if (cashflow.length) { %>
-  <div style="overflow-x:auto">
-  <table class="tabla rtable"><thead><tr><th>Mes</th><th>Créditos</th><th>Débitos</th><th>Saldo Final</th><th>Deuda proveedores</th></tr></thead><tbody>
-    <% cashflow.forEach(function(cf) { %>
-    <tr>
-      <td data-label="Mes"><%= cf.mes %></td>
-      <td data-label="Créditos">$<%= cf.creditosCobrados %></td>
-      <td data-label="Débitos">$<%= cf.debitosProveedores %></td>
-      <td data-label="Saldo Final">$<%= cf.saldoFinal %></td>
-      <td data-label="Deuda proveedores">$<%= cf.deudaProveedores||'0' %></td>
-    </tr>
-    <% }); %>
-  </tbody></table>
+<div class="grid-2">
+  <div class="card">
+    <h3>Datos del Consorcio</h3>
+    <table class="tabla-detalle">
+      <% var claves = Object.keys(di); %>
+      <% if (claves.length) { %>
+        <% claves.forEach(function(k){ %>
+          <tr><th><%= k %></th><td><%= di[k] || '—' %></td></tr>
+        <% }); %>
+      <% } else { %>
+        <tr><td>Sin datos.</td></tr>
+      <% } %>
+    </table>
   </div>
-  <% } else { %><p>Sin datos de Cash Flow.</p><% } %>
-</div>
-
-<div class="card">
-  <h3>Datos del Consorcio</h3>
-  <table class="tabla-detalle"><tr><th>Nombre</th><td><%= di['Nombre consorcio']||'—' %></td></tr><tr><th>Mes activo</th><td><%= di['Mes activo']||'—' %></td></tr><tr><th>1er Venc</th><td>Día <%= di['Día 1er vencimiento']||'6' %></td></tr><tr><th>2do Venc</th><td>Día <%= di['Día 2do vencimiento']||'13' %></td></tr><tr><th>Extraordinaria</th><td>$<%= di['Extraordinaria activa (monto mensual)']||'0' %></td></tr></table>
+  <div class="card">
+    <h3>Cash Flow</h3>
+    <% if (cashflow.length) { %>
+    <div style="overflow-x:auto">
+    <table class="tabla rtable"><thead><tr><th>Mes</th><th>Créditos</th><th>Débitos</th><th>Saldo Final</th><th>Deuda proveedores</th></tr></thead><tbody>
+      <% cashflow.forEach(function(cf) { %>
+      <tr>
+        <td data-label="Mes"><%= cf.mes %></td>
+        <td data-label="Créditos"><%= money(cf.creditosCobrados) %></td>
+        <td data-label="Débitos"><%= money(cf.debitosProveedores) %></td>
+        <td data-label="Saldo Final"><%= money(cf.saldoFinal) %></td>
+        <td data-label="Deuda proveedores"><%= money(cf.deudaProveedores) %></td>
+      </tr>
+      <% }); %>
+    </tbody></table>
+    </div>
+    <% } else { %><p>Sin datos de Cash Flow.</p><% } %>
+  </div>
 </div>
 
 <div class="card">
