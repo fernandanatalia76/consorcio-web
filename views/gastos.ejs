@@ -2,65 +2,101 @@
 <% function money(v){ v=String(v==null?'':v).trim().replace(/^\$\s*/,''); return '$'+(v||'0'); } %>
 <h1>Gastos y Saldos — <%= mesLabel %></h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
-<% if (cashflow) { %>
-<div class="card resumen-card">
-  <h3>Resumen — <%= mesLabel %></h3>
-  <div class="resumen-grid">
-    <div class="resumen-item" style="background:#f1f3f4"><div class="resumen-label">Saldo inicial</div><div class="resumen-valor"><%= money(cashflow.saldoInicial) %></div></div>
-    <div class="resumen-item" style="background:#e6f4ea"><div class="resumen-label">Créditos cobrados</div><div class="resumen-valor"><%= money(cashflow.creditosCobrados) %></div></div>
-    <div class="resumen-item" style="background:#fce8e6"><div class="resumen-label">Total débitos</div><div class="resumen-valor"><%= money(cashflow.debitosProveedores) %></div></div>
-    <div class="resumen-item" style="background:#e8f0fe"><div class="resumen-label">Saldo final</div><div class="resumen-valor"><%= money(cashflow.saldoFinal) %></div></div>
-  </div>
-  <% if (cashflow.deudaProveedores && cashflow.deudaProveedores !== '0' && cashflow.deudaProveedores !== '$0,00') { %>
-  <div class="deuda-box"><strong>Deuda a proveedores:</strong> <%= money(cashflow.deudaProveedores) %><% if (cashflow.facturas) { %> <span class="nota">(<%= cashflow.facturas %>)</span><% } %></div>
-  <% } %>
-</div>
-<% } %>
+
 <%
-  function esExtra(g){ return String(g.categoria||'').toLowerCase().indexOf('extraordinari') !== -1; }
-  var ordinarios = gastos.filter(function(g){ return !esExtra(g); });
-  var extraordinarios = gastos.filter(esExtra);
+  var cfHist = (typeof cashflowHistorico !== 'undefined' && cashflowHistorico) ? cashflowHistorico : [];
 %>
-<% if (ordinarios.length) { %>
-<div class="card"><h3>Detalle de facturas — Gastos ordinarios</h3><div style="overflow-x:auto">
-  <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>Fecha</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr></thead><tbody>
-    <% ordinarios.forEach(function(g) { %>
-    <tr>
-      <td data-label="Proveedor"><%= g.proveedor %></td>
-      <td data-label="Fecha"><%= g.fecha %></td>
-      <td data-label="Importe"><%= money(g.importe) %></td>
-      <td data-label="Debitado"><%= money(g.montoDebitado) %></td>
-      <td data-label="Estado"><% if(g.estado&&g.estado.indexOf('Validado')!==-1){%><span class="badge badge-total"><%= g.estado %></span><%}else if(g.estado&&(g.estado.indexOf('Sin')!==-1||g.estado.indexOf('No ')!==-1)){%><span class="badge badge-pendiente"><%= g.estado %></span><%}else{%><span class="badge"><%= g.estado %></span><%}%></td>
-    </tr>
-    <% }); %>
-  </tbody></table></div></div>
-<% } %>
-<% if (extraordinarios.length) { %>
-<div class="card"><h3>Gastos extraordinarios</h3><div style="overflow-x:auto">
-  <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>Fecha</th><th>Categoría</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr></thead><tbody>
-    <% extraordinarios.forEach(function(g) { %>
-    <tr>
-      <td data-label="Proveedor"><%= g.proveedor %></td>
-      <td data-label="Fecha"><%= g.fecha %></td>
-      <td data-label="Categoría"><%= g.categoria %></td>
-      <td data-label="Importe"><%= money(g.importe) %></td>
-      <td data-label="Debitado"><%= money(g.montoDebitado) %></td>
-      <td data-label="Estado"><span class="badge"><%= g.estado %></span></td>
-    </tr>
-    <% }); %>
-  </tbody></table></div></div>
-<% } %>
-<% if (impuestos.length) { %>
-<div class="card"><h3>Impuestos y Comisiones bancarias</h3><div style="overflow-x:auto">
-  <table class="tabla rtable"><thead><tr><th>Concepto</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr></thead><tbody>
-    <% impuestos.forEach(function(g) { %>
-    <tr>
-      <td data-label="Concepto"><%= g.proveedor %></td>
-      <td data-label="Importe"><%= money(g.importe) %></td>
-      <td data-label="Debitado"><%= money(g.montoDebitado) %></td>
-      <td data-label="Estado"><span class="badge badge-total"><%= g.estado %></span></td>
-    </tr>
-    <% }); %>
-  </tbody></table></div></div>
-<% } %>
+<div class="gastos-grid">
+  <aside class="card cf-historico">
+    <h3>Cash Flow — histórico</h3>
+    <% if (cfHist.length) { %>
+      <div class="cf-lista">
+        <% cfHist.slice().reverse().forEach(function(cf){ %>
+          <div class="cf-item">
+            <div class="cf-mes"><%= cf.mes %></div>
+            <div class="cf-linea"><span>Créditos</span><strong class="cf-verde"><%= money(cf.creditosCobrados) %></strong></div>
+            <div class="cf-linea"><span>Débitos</span><strong class="cf-rojo"><%= money(cf.debitosProveedores) %></strong></div>
+            <div class="cf-linea cf-total"><span>Saldo final</span><strong><%= money(cf.saldoFinal) %></strong></div>
+            <% if (cf.deudaProveedores && cf.deudaProveedores !== '0' && cf.deudaProveedores !== '$0,00') { %>
+              <div class="cf-linea cf-deuda"><span>Deuda proveedores</span><strong><%= money(cf.deudaProveedores) %></strong></div>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <p class="nota">Sin datos de Cash Flow.</p>
+    <% } %>
+  </aside>
+
+  <section class="gastos-main">
+    <% if (cashflow) { %>
+    <div class="card resumen-card">
+      <h3>Resumen — <%= mesLabel %></h3>
+      <div class="resumen-grid">
+        <div class="resumen-item" style="background:#f1f3f4"><div class="resumen-label">Saldo inicial</div><div class="resumen-valor"><%= money(cashflow.saldoInicial) %></div></div>
+        <div class="resumen-item" style="background:#e6f4ea"><div class="resumen-label">Créditos cobrados</div><div class="resumen-valor"><%= money(cashflow.creditosCobrados) %></div></div>
+        <div class="resumen-item" style="background:#fce8e6"><div class="resumen-label">Total débitos</div><div class="resumen-valor"><%= money(cashflow.debitosProveedores) %></div></div>
+        <div class="resumen-item" style="background:#e8f0fe"><div class="resumen-label">Saldo final</div><div class="resumen-valor"><%= money(cashflow.saldoFinal) %></div></div>
+      </div>
+      <% if (cashflow.deudaProveedores && cashflow.deudaProveedores !== '0' && cashflow.deudaProveedores !== '$0,00') { %>
+      <div class="deuda-box"><strong>Deuda a proveedores:</strong> <%= money(cashflow.deudaProveedores) %><% if (cashflow.facturas) { %> <span class="nota">(<%= cashflow.facturas %>)</span><% } %></div>
+      <% } %>
+    </div>
+    <% } %>
+
+    <%
+      function esExtra(g){ return String(g.categoria||'').toLowerCase().indexOf('extraordinari') !== -1; }
+      var ordinarios = gastos.filter(function(g){ return !esExtra(g); });
+      var extraordinarios = gastos.filter(esExtra);
+    %>
+
+    <% if (ordinarios.length) { %>
+    <div class="card"><h3>Detalle de facturas — Gastos ordinarios</h3><div style="overflow-x:auto">
+      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr></thead><tbody>
+        <% ordinarios.forEach(function(g) { %>
+        <tr>
+          <td data-label="Proveedor"><%= g.proveedor %></td>
+          <td data-label="N° Comprobante"><%= g.nroComprobante || '—' %></td>
+          <td data-label="Fecha"><%= g.fecha %></td>
+          <td data-label="Importe"><%= money(g.importe) %></td>
+          <td data-label="Debitado"><%= money(g.montoDebitado) %></td>
+          <td data-label="Estado"><% if(g.estado&&g.estado.indexOf('Validado')!==-1){%><span class="badge badge-total"><%= g.estado %></span><%}else if(g.estado&&(g.estado.indexOf('Sin')!==-1||g.estado.indexOf('No ')!==-1)){%><span class="badge badge-pendiente"><%= g.estado %></span><%}else{%><span class="badge"><%= g.estado %></span><%}%></td>
+        </tr>
+        <% }); %>
+      </tbody></table></div></div>
+    <% } %>
+
+    <% if (extraordinarios.length) { %>
+    <div class="card"><h3>Gastos extraordinarios</h3><div style="overflow-x:auto">
+      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Categoría</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr></thead><tbody>
+        <% extraordinarios.forEach(function(g) { %>
+        <tr>
+          <td data-label="Proveedor"><%= g.proveedor %></td>
+          <td data-label="N° Comprobante"><%= g.nroComprobante || '—' %></td>
+          <td data-label="Fecha"><%= g.fecha %></td>
+          <td data-label="Categoría"><%= g.categoria %></td>
+          <td data-label="Importe"><%= money(g.importe) %></td>
+          <td data-label="Debitado"><%= money(g.montoDebitado) %></td>
+          <td data-label="Estado"><span class="badge"><%= g.estado %></span></td>
+        </tr>
+        <% }); %>
+      </tbody></table></div></div>
+    <% } %>
+
+    <% if (impuestos.length) { %>
+    <div class="card"><h3>Impuestos y Comisiones bancarias</h3><div style="overflow-x:auto">
+      <table class="tabla rtable"><thead><tr><th>Concepto</th><th>N° Comprobante</th><th>Importe</th><th>Debitado</th><th>Estado</th></tr></thead><tbody>
+        <% impuestos.forEach(function(g) { %>
+        <tr>
+          <td data-label="Concepto"><%= g.proveedor %></td>
+          <td data-label="N° Comprobante"><%= g.nroComprobante || '—' %></td>
+          <td data-label="Importe"><%= money(g.importe) %></td>
+          <td data-label="Debitado"><%= money(g.montoDebitado) %></td>
+          <td data-label="Estado"><span class="badge badge-total"><%= g.estado %></span></td>
+        </tr>
+        <% }); %>
+      </tbody></table></div></div>
+    <% } %>
+  </section>
+</div>
 <%- include('footer') %>
