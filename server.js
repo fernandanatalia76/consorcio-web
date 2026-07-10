@@ -156,6 +156,11 @@ app.get('/gastos', requireLogin, async function (req, res) {
     var cfData = await sheets.leerCashFlow();
     var mesNorm = (mg.meses[mg.mesGasNum - 1] || '').toLowerCase();
     var cashflow = cfData.find(function (cf) { var t = String(cf.mes || '').toLowerCase(); return t.indexOf(mesNorm) !== -1 && t.indexOf(String(mg.mesGasAnio)) !== -1; }) || null;
+    // La deuda a proveedores viene de "PDF saldos y gastos"!E6, no de la columna I de Cash Flow.
+    var deudaProv = await sheets.leerDeudaProveedores();
+    // El total general de gastos del mes viene de "Gastos"!J2.
+    var totalGastos = await sheets.leerTotalGastos();
+    if (cashflow) { cashflow.deudaProveedores = deudaProv; cashflow.totalGastos = totalGastos; cashflow.facturas = ''; }
     res.render('gastos', { gastos: gastos, impuestos: impuestos, cashflow: cashflow, cashflowHistorico: cfData, mesLabel: mg.mesLabel, error: null });
   } catch (e) { res.render('gastos', { gastos: [], impuestos: [], cashflow: null, cashflowHistorico: [], mesLabel: '', error: e.message }); }
 });
