@@ -164,6 +164,12 @@ app.post('/admin/desactivar', requireAdmin, async function (req, res) {
   res.redirect('/admin?msg=Usuario+' + encodeURIComponent(req.body.uf) + '+dado+de+baja');
 });
 
+app.post('/admin/eliminar', requireAdmin, async function (req, res) {
+  var r = await authLib.eliminarUsuario(req.body.uf);
+  var msg = r.ok ? 'Usuario ' + req.body.uf + ' eliminado' : 'Error: ' + r.error;
+  res.redirect('/admin?msg=' + encodeURIComponent(msg));
+});
+
 app.post('/admin/blanquear', requireAdmin, async function (req, res) {
   var r = await authLib.blanquearClave(req.body.uf, req.body.password);
   if (r.ok && r.email) {
