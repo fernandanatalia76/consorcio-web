@@ -3,25 +3,28 @@
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (msg) { %><div class="msg success"><%= msg %></div><% } %>
 
-<div class="grid-2">
-  <div class="card">
-    <h3>Datos del Consorcio</h3>
-    <table class="tabla-detalle"><tr><th>Nombre</th><td><%= di['Nombre consorcio']||'—' %></td></tr><tr><th>Mes activo</th><td><%= di['Mes activo']||'—' %></td></tr><tr><th>1er Venc</th><td>Día <%= di['Día 1er vencimiento']||'6' %></td></tr><tr><th>2do Venc</th><td>Día <%= di['Día 2do vencimiento']||'13' %></td></tr><tr><th>Extraordinaria</th><td>$<%= di['Extraordinaria activa (monto mensual)']||'0' %></td></tr></table>
+<div class="card">
+  <h3>Cash Flow</h3>
+  <% if (cashflow.length) { %>
+  <div style="overflow-x:auto">
+  <table class="tabla rtable"><thead><tr><th>Mes</th><th>Créditos</th><th>Débitos</th><th>Saldo Final</th><th>Deuda proveedores</th></tr></thead><tbody>
+    <% cashflow.forEach(function(cf) { %>
+    <tr>
+      <td data-label="Mes"><%= cf.mes %></td>
+      <td data-label="Créditos">$<%= cf.creditosCobrados %></td>
+      <td data-label="Débitos">$<%= cf.debitosProveedores %></td>
+      <td data-label="Saldo Final">$<%= cf.saldoFinal %></td>
+      <td data-label="Deuda proveedores">$<%= cf.deudaProveedores||'0' %></td>
+    </tr>
+    <% }); %>
+  </tbody></table>
   </div>
-  <div class="card">
-    <h3>🔐 Cambiar contraseña de admin</h3>
-    <form method="POST" action="/admin/cambiar-password" style="display:flex;gap:8px;align-items:end">
-      <div style="flex:1"><label>Nueva contraseña</label><input type="text" name="password" required></div>
-      <button type="submit" class="btn btn-sm" style="margin-bottom:2px">Cambiar</button>
-    </form>
-    <p class="nota" style="margin-top:8px">Queda guardada en la planilla (no se pierde al reiniciar).</p>
+  <% } else { %><p>Sin datos de Cash Flow.</p><% } %>
+</div>
 
-    <h3 style="margin-top:16px">✉️ Probar envío de email</h3>
-    <form method="POST" action="/admin/test-email" style="display:flex;gap:8px;align-items:end">
-      <div style="flex:1"><label>Enviar prueba a</label><input type="email" name="destino" placeholder="(por defecto, el admin)"></div>
-      <button type="submit" class="btn btn-sm" style="margin-bottom:2px">Enviar prueba</button>
-    </form>
-  </div>
+<div class="card">
+  <h3>Datos del Consorcio</h3>
+  <table class="tabla-detalle"><tr><th>Nombre</th><td><%= di['Nombre consorcio']||'—' %></td></tr><tr><th>Mes activo</th><td><%= di['Mes activo']||'—' %></td></tr><tr><th>1er Venc</th><td>Día <%= di['Día 1er vencimiento']||'6' %></td></tr><tr><th>2do Venc</th><td>Día <%= di['Día 2do vencimiento']||'13' %></td></tr><tr><th>Extraordinaria</th><td>$<%= di['Extraordinaria activa (monto mensual)']||'0' %></td></tr></table>
 </div>
 
 <div class="card">
@@ -68,22 +71,21 @@
   <% } else { %><p>No hay usuarios activos.</p><% } %>
 </div>
 
-<div class="card">
-  <h3>Cash Flow</h3>
-  <% if (cashflow.length) { %>
-  <div style="overflow-x:auto">
-  <table class="tabla rtable"><thead><tr><th>Mes</th><th>Créditos</th><th>Débitos</th><th>Saldo Final</th><th>Deuda proveedores</th></tr></thead><tbody>
-    <% cashflow.forEach(function(cf) { %>
-    <tr>
-      <td data-label="Mes"><%= cf.mes %></td>
-      <td data-label="Créditos">$<%= cf.creditosCobrados %></td>
-      <td data-label="Débitos">$<%= cf.debitosProveedores %></td>
-      <td data-label="Saldo Final">$<%= cf.saldoFinal %></td>
-      <td data-label="Deuda proveedores">$<%= cf.deudaProveedores||'0' %></td>
-    </tr>
-    <% }); %>
-  </tbody></table>
+<div class="grid-2">
+  <div class="card">
+    <h3>🔐 Cambiar contraseña de admin</h3>
+    <form method="POST" action="/admin/cambiar-password" style="display:flex;gap:8px;align-items:end">
+      <div style="flex:1"><label>Nueva contraseña</label><input type="text" name="password" required></div>
+      <button type="submit" class="btn btn-sm" style="margin-bottom:2px">Cambiar</button>
+    </form>
+    <p class="nota" style="margin-top:8px">Queda guardada en la planilla (no se pierde al reiniciar).</p>
   </div>
-  <% } else { %><p>Sin datos de Cash Flow.</p><% } %>
+  <div class="card">
+    <h3>✉️ Probar envío de email</h3>
+    <form method="POST" action="/admin/test-email" style="display:flex;gap:8px;align-items:end">
+      <div style="flex:1"><label>Enviar prueba a</label><input type="email" name="destino" placeholder="(por defecto, el admin)"></div>
+      <button type="submit" class="btn btn-sm" style="margin-bottom:2px">Enviar prueba</button>
+    </form>
+  </div>
 </div>
 <%- include('footer') %>
