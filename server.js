@@ -134,8 +134,8 @@ app.get('/gastos', requireLogin, async function (req, res) {
     var cfData = await sheets.leerCashFlow();
     var mesNorm = (mg.meses[mg.mesGasNum - 1] || '').toLowerCase();
     var cashflow = cfData.find(function (cf) { var t = String(cf.mes || '').toLowerCase(); return t.indexOf(mesNorm) !== -1 && t.indexOf(String(mg.mesGasAnio)) !== -1; }) || null;
-    res.render('gastos', { gastos: gastos, impuestos: impuestos, cashflow: cashflow, mesLabel: mg.mesLabel, error: null });
-  } catch (e) { res.render('gastos', { gastos: [], impuestos: [], cashflow: null, mesLabel: '', error: e.message }); }
+    res.render('gastos', { gastos: gastos, impuestos: impuestos, cashflow: cashflow, cashflowHistorico: cfData, mesLabel: mg.mesLabel, error: null });
+  } catch (e) { res.render('gastos', { gastos: [], impuestos: [], cashflow: null, cashflowHistorico: [], mesLabel: '', error: e.message }); }
 });
 
 // ==================== ADMIN ====================
