@@ -1,5 +1,25 @@
 <%- include('header') %>
 <% function money(v){ v=String(v==null?'':v).trim().replace(/^\$\s*/,''); return '$'+(v||'0'); } %>
+<%
+  // Solo estos campos de "Datos inicio", en este orden.
+  var camposConsorcio = [
+    'Nombre consorcio',
+    'CUIT',
+    'CBU Santander',
+    'Mes activo',
+    'Recargo 2do vencimiento (%)',
+    'Día 1er vencimiento',
+    'Día 2do vencimiento',
+    'Extraordinaria activa (monto mensual)',
+    'Extraordinaria Cuotas restantes'
+  ];
+  function norm(s){ return String(s||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+  var diKeys = Object.keys(di);
+  function valorDe(label){
+    var k = diKeys.find(function(dk){ return norm(dk) === norm(label); });
+    return k ? di[k] : '';
+  }
+%>
 <h1>Panel de Administración</h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (msg) { %><div class="msg success"><%= msg %></div><% } %>
@@ -8,14 +28,9 @@
   <div class="card">
     <h3>Datos del Consorcio</h3>
     <table class="tabla-detalle">
-      <% var claves = Object.keys(di); %>
-      <% if (claves.length) { %>
-        <% claves.forEach(function(k){ %>
-          <tr><th><%= k %></th><td><%= di[k] || '—' %></td></tr>
-        <% }); %>
-      <% } else { %>
-        <tr><td>Sin datos.</td></tr>
-      <% } %>
+      <% camposConsorcio.forEach(function(label){ var v = valorDe(label); %>
+        <tr><th><%= label %></th><td><%= (v===''||v==null) ? '—' : v %></td></tr>
+      <% }); %>
     </table>
   </div>
   <div class="card">
