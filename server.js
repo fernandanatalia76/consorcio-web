@@ -75,11 +75,10 @@ app.get('/registrar', function (req, res) { res.render('registrar', { error: nul
 app.post('/registrar', async function (req, res) {
   try {
     var uf = String(req.body.uf).trim();
-    var cuit = String(req.body.cuit || '').replace(/\D/g, '');
-    if (cuit.length !== 11) return res.render('registrar', { error: 'El CUIT debe tener 11 dígitos.', ok: false });
+    var cuit = String(req.body.cuit || '').trim();
     var ufs = await sheets.leerUFs();
-    var match = ufs.find(function (u) { return u.uf === uf && String(u.cuit || '').replace(/\D/g, '') === cuit; });
-    if (!match) return res.render('registrar', { error: 'UF ' + uf + ' con ese CUIT no encontrada.', ok: false });
+    var match = ufs.find(function (u) { return u.uf === uf; });
+    if (!match) return res.render('registrar', { error: 'UF ' + uf + ' no encontrada.', ok: false });
     var r = await authLib.registrar(uf, cuit, match.propietario, req.body.email);
     if (!r.ok) return res.render('registrar', { error: r.error, ok: false });
     // Notificar al admin (no bloqueante)
