@@ -22,6 +22,57 @@
 <h1>Panel de Administración</h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (msg) { %><div class="msg success"><%= msg %></div><% } %>
+<% if (flash && flash.tipo === 'aviso') { %>
+  <div class="msg success"><%= flash.texto %></div>
+<% } %>
+<% if (flash && flash.tipo === 'credenciales') { %>
+  <%
+    var accionTxt = flash.accion === 'blanqueada' ? 'blanqueada' : 'activada';
+    var textoWhatsApp = 'Hola! Ya podés ingresar al portal del Consorcio.\n' +
+      'Web: https://consorcio-web.onrender.com\n' +
+      'Usuario (UF): ' + flash.uf + '\n' +
+      'Contraseña: ' + flash.password;
+  %>
+  <div class="cred-card">
+    <div class="cred-head">
+      <span class="cred-check">✅</span>
+      <span>Cuenta <%= accionTxt %> — UF <%= flash.uf %></span>
+    </div>
+    <div class="cred-body">
+      <div class="cred-row"><span class="cred-lbl">Usuario</span><span class="cred-val"><%= flash.uf %></span></div>
+      <div class="cred-row"><span class="cred-lbl">Contraseña</span><span class="cred-val cred-pw"><%= flash.password %></span></div>
+    </div>
+    <div class="cred-actions">
+      <button type="button" class="btn btn-sm" onclick="copiarCredenciales()">📋 Copiar para WhatsApp</button>
+      <span id="cred-copiado" class="cred-copiado"></span>
+    </div>
+    <% if (flash.mail && flash.mail.intentado) { %>
+      <div class="cred-mail">
+        <% if (flash.mail.ok) { %>
+          ✉️ También se envió por mail a <strong><%= flash.mail.email %></strong>.
+        <% } else { %>
+          ⚠️ El mail a <strong><%= flash.mail.email %></strong> no pudo enviarse
+          <% if (flash.mail.error) { %>(<%= flash.mail.error %>)<% } %>.
+          Pasásela por WhatsApp con el botón de arriba.
+        <% } %>
+      </div>
+    <% } %>
+    <p class="cred-nota">Este cartel aparece una sola vez. Guardá la clave o copiala antes de recargar.</p>
+  </div>
+  <script>
+    var __textoWA = <%- JSON.stringify(textoWhatsApp) %>;
+    function copiarCredenciales(){
+      var f = function(){ document.getElementById('cred-copiado').textContent = '¡Copiado!'; setTimeout(function(){var e=document.getElementById('cred-copiado'); if(e) e.textContent='';}, 2500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(__textoWA).then(f, function(){ prompt('Copiá con Ctrl+C:', __textoWA); });
+      } else {
+        var ta = document.createElement('textarea'); ta.value = __textoWA; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); f(); } catch(e){ prompt('Copiá con Ctrl+C:', __textoWA); }
+        document.body.removeChild(ta);
+      }
+    }
+  </script>
+<% } %>
 
 <div class="grid-2">
   <div class="card">
