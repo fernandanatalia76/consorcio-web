@@ -10,6 +10,24 @@
     if (/^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(s)) return '';
     return s;
   }
+  // Convierte "$1.234,56" o "1.234,56" a numero
+  function toNum(v){
+    if (v==null) return 0;
+    var s = String(v).replace(/[^\d.,-]/g,'');
+    if (!s) return 0;
+    if (s.indexOf(',')!==-1) s = s.replace(/\./g,'').replace(',','.');
+    else if (s.indexOf('.')!==-1) {
+      var partes = s.split('.');
+      if (partes[partes.length-1].length === 3) s = partes.join('');
+    }
+    var n = parseFloat(s); return isNaN(n) ? 0 : n;
+  }
+  // Suma una columna y devuelve el total formateado en formato AR
+  function sumCol(arr, campo){
+    var total = 0;
+    arr.forEach(function(x){ total += toNum(x[campo]); });
+    return '$' + total.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  }
 %>
 <h1>Gastos y Saldos — <%= mesLabel %></h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
@@ -48,7 +66,7 @@
         <div class="resumen-item" style="background:#e8f0fe"><div class="resumen-label">Saldo final</div><div class="resumen-valor"><%= money(cashflow.saldoFinal) %></div></div>
       </div>
       <% if (cashflow.deudaProveedores && cashflow.deudaProveedores !== '0' && cashflow.deudaProveedores !== '$0,00') { %>
-      <div class="deuda-box"><strong>Deuda a proveedores:</strong> <%= money(cashflow.deudaProveedores) %><% if (cashflow.facturas) { %> <span class="nota">(<%= cashflow.facturas %>)</span><% } %></div>
+      <div class="deuda-box"><strong>Deuda a proveedores:</strong> <%= money(cashflow.deudaProveedores) %><% if (cashflow.totalGastos) { %> <span class="nota">(Total gastos: <%= money(cashflow.totalGastos) %>)</span><% } %></div>
       <% } %>
     </div>
     <% } %>
@@ -72,7 +90,9 @@
           <td data-label="Estado"><% if(g.estado&&g.estado.indexOf('Validado')!==-1){%><span class="badge badge-total"><%= g.estado %></span><%}else if(g.estado&&(g.estado.indexOf('Sin')!==-1||g.estado.indexOf('No ')!==-1)){%><span class="badge badge-pendiente"><%= g.estado %></span><%}else{%><span class="badge"><%= g.estado %></span><%}%></td>
         </tr>
         <% }); %>
-      </tbody></table></div></div>
+      </tbody>
+      <tfoot><tr class="fila-total"><th colspan="3">TOTAL</th><th data-label="Importe"><%= sumCol(ordinarios,'importe') %></th><th data-label="Gastos"><%= sumCol(ordinarios,'montoDebitado') %></th><th></th></tr></tfoot>
+      </table></div></div>
     <% } %>
 
     <% if (extraordinarios.length) { %>
@@ -89,7 +109,9 @@
           <td data-label="Estado"><span class="badge"><%= g.estado %></span></td>
         </tr>
         <% }); %>
-      </tbody></table></div></div>
+      </tbody>
+      <tfoot><tr class="fila-total"><th colspan="4">TOTAL</th><th data-label="Importe"><%= sumCol(extraordinarios,'importe') %></th><th data-label="Gastos"><%= sumCol(extraordinarios,'montoDebitado') %></th><th></th></tr></tfoot>
+      </table></div></div>
     <% } %>
 
     <% if (impuestos.length) { %>
@@ -104,7 +126,9 @@
           <td data-label="Estado"><span class="badge badge-total"><%= g.estado %></span></td>
         </tr>
         <% }); %>
-      </tbody></table></div></div>
+      </tbody>
+      <tfoot><tr class="fila-total"><th colspan="2">TOTAL</th><th data-label="Importe"><%= sumCol(impuestos,'importe') %></th><th data-label="Gastos"><%= sumCol(impuestos,'montoDebitado') %></th><th></th></tr></tfoot>
+      </table></div></div>
     <% } %>
   </section>
 </div>
