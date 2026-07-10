@@ -140,10 +140,11 @@
   <% var activos = usuarios.filter(function(u){return u.activo;}); %>
   <% if (activos.length) { %>
   <div style="overflow-x:auto">
-  <table class="tabla rtable"><thead><tr><th>UF</th><th>Propietario</th><th>Email</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+  <table class="tabla rtable"><thead><tr><th>UF</th><th>CUIT</th><th>Propietario</th><th>Email</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
     <% activos.forEach(function(u) { %>
     <tr>
       <td data-label="UF"><%= u.uf %></td>
+      <td data-label="CUIT"><%= u.cuit||'' %></td>
       <td data-label="Propietario"><%= u.propietario %></td>
       <td data-label="Email"><%= u.email||'' %></td>
       <td data-label="Estado"><span class="badge badge-total">Activo</span></td>
