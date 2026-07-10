@@ -1,5 +1,16 @@
 <%- include('header') %>
 <% function money(v){ v=String(v==null?'':v).trim().replace(/^\$\s*/,''); return '$'+(v||'0'); } %>
+<%
+  // Muestra el numero de comprobante o vacio.
+  // Si en la planilla quedo pegada una fecha en esa celda, la ignoramos para que no aparezca.
+  function comp(v){
+    var s = String(v==null?'':v).trim();
+    if (!s) return '';
+    // Detecta cosas como 05/06/26, 5-6-2026, 05.06.26, etc.
+    if (/^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(s)) return '';
+    return s;
+  }
+%>
 <h1>Gastos y Saldos — <%= mesLabel %></h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 
@@ -14,12 +25,10 @@
         <% cfHist.slice().reverse().forEach(function(cf){ %>
           <div class="cf-item">
             <div class="cf-mes"><%= cf.mes %></div>
+            <div class="cf-linea"><span>Saldo inicial</span><strong><%= money(cf.saldoInicial) %></strong></div>
             <div class="cf-linea"><span>Créditos</span><strong class="cf-verde"><%= money(cf.creditosCobrados) %></strong></div>
             <div class="cf-linea"><span>Débitos</span><strong class="cf-rojo"><%= money(cf.debitosProveedores) %></strong></div>
             <div class="cf-linea cf-total"><span>Saldo final</span><strong><%= money(cf.saldoFinal) %></strong></div>
-            <% if (cf.deudaProveedores && cf.deudaProveedores !== '0' && cf.deudaProveedores !== '$0,00') { %>
-              <div class="cf-linea cf-deuda"><span>Deuda proveedores</span><strong><%= money(cf.deudaProveedores) %></strong></div>
-            <% } %>
           </div>
         <% }); %>
       </div>
@@ -56,7 +65,7 @@
         <% ordinarios.forEach(function(g) { %>
         <tr>
           <td data-label="Proveedor"><%= g.proveedor %></td>
-          <td data-label="N° Comprobante"><%= g.nroComprobante || '—' %></td>
+          <td data-label="N° Comprobante"><%= comp(g.nroComprobante) %></td>
           <td data-label="Fecha"><%= g.fecha %></td>
           <td data-label="Importe"><%= money(g.importe) %></td>
           <td data-label="Debitado"><%= money(g.montoDebitado) %></td>
@@ -72,7 +81,7 @@
         <% extraordinarios.forEach(function(g) { %>
         <tr>
           <td data-label="Proveedor"><%= g.proveedor %></td>
-          <td data-label="N° Comprobante"><%= g.nroComprobante || '—' %></td>
+          <td data-label="N° Comprobante"><%= comp(g.nroComprobante) %></td>
           <td data-label="Fecha"><%= g.fecha %></td>
           <td data-label="Categoría"><%= g.categoria %></td>
           <td data-label="Importe"><%= money(g.importe) %></td>
@@ -89,7 +98,7 @@
         <% impuestos.forEach(function(g) { %>
         <tr>
           <td data-label="Concepto"><%= g.proveedor %></td>
-          <td data-label="N° Comprobante"><%= g.nroComprobante || '—' %></td>
+          <td data-label="N° Comprobante"><%= comp(g.nroComprobante) %></td>
           <td data-label="Importe"><%= money(g.importe) %></td>
           <td data-label="Debitado"><%= money(g.montoDebitado) %></td>
           <td data-label="Estado"><span class="badge badge-total"><%= g.estado %></span></td>
