@@ -52,12 +52,34 @@ function calcularEstado(row) {
   return { clave: 'total', label: 'Pagado' };
 }
 
-function getMesGastos(di) {
+// Helper del mes activo (viene de "Datos inicio" en formato AAAA-MM).
+// Se usa como base para las dos vistas:
+//   - Liquidacion: se muestra ESE mes (el activo).
+//   - Gastos / Cash Flow: se muestra el mes ANTERIOR al activo (son los gastos
+//     que se estan cobrando en este mes).
+function getMesActivo(di) {
   var p = String(di['Mes activo'] || '').split('-');
   var anio = parseInt(p[0]), mesNum = parseInt(p[1]);
-  var mg = mesNum === 1 ? 12 : mesNum - 1, ma = mesNum === 1 ? anio - 1 : anio;
+  var mgNum = (mesNum === 1) ? 12 : (mesNum - 1);
+  var mgAnio = (mesNum === 1) ? (anio - 1) : anio;
   var meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  return { mesNum: mesNum, anio: anio, mesGasNum: mg, mesGasAnio: ma, mesLabel: meses[mg - 1] + ' ' + ma, mesTxt: String(ma) + '-' + String(mg).padStart(2, '0'), meses: meses };
+  return {
+    // Mes activo
+    mesNum: mesNum, anio: anio,
+    mesLabel: meses[mesNum - 1] + ' ' + anio,
+    mesTxt: String(anio) + '-' + String(mesNum).padStart(2, '0'),
+    // Mes anterior (gastos)
+    mesGasNum: mgNum, mesGasAnio: mgAnio,
+    mesGasLabel: meses[mgNum - 1] + ' ' + mgAnio,
+    mesGasTxt: String(mgAnio) + '-' + String(mgNum).padStart(2, '0'),
+    meses: meses
+  };
+}
+// Alias por compatibilidad con codigo antiguo (usaban mesGasNum/mesGasAnio/mesLabel como si fueran del mes anterior)
+function getMesGastos(di) {
+  var a = getMesActivo(di);
+  // Para vistas de GASTOS, mesLabel debe ser el mes anterior.
+  return Object.assign({}, a, { mesLabel: a.mesGasLabel, mesTxt: a.mesGasTxt });
 }
 
 // ==================== RUTAS PUBLICAS ====================
@@ -95,10 +117,11 @@ app.get('/logout', function (req, res) { req.session.destroy(function () { res.r
 app.get('/mi-liquidacion', requireLogin, async function (req, res) {
   try {
     var di = await sheets.leerDatosInicio();
-    var mg = getMesGastos(di);
-    var liq = await sheets.leerLiquidacionMensual(mg.mesGasNum, mg.mesGasAnio);
+    var ma = getMesActivo(di);
+    // Titulo: mes activo (Julio 2026). Datos: solapa del mes anterior (Liquidacion Junio 2026).
+    var liq = await sheets.leerLiquidacionMensual(ma.mesGasNum, ma.mesGasAnio);
     var dato = liq.datos.find(function (d) { return d.uf === req.session.usuario.uf; });
-    res.render('liquidacion', { dato: dato, mesLabel: mg.mesLabel, error: liq.error || null, dia1: di['Día 1er vencimiento'] || '6', dia2: di['Día 2do vencimiento'] || '13', mesVenc: mg.mesNum, anioVenc: mg.anio });
+    res.render('liquidacion', { dato: dato, mesLabel: ma.mesLabel, error: liq.error || null, dia1: di['Día 1er vencimiento'] || '6', dia2: di['Día 2do vencimiento'] || '13', mesVenc: ma.mesNum, anioVenc: ma.anio });
   } catch (e) { res.render('liquidacion', { dato: null, mesLabel: '', error: e.message, dia1: '', dia2: '', mesVenc: '', anioVenc: '' }); }
 });
 
@@ -106,9 +129,9 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
 app.get('/liquidacion-completa', requireLogin, async function (req, res) {
   try {
     var di = await sheets.leerDatosInicio();
-    var mg = getMesGastos(di);
-    var liq = await sheets.leerLiquidacionMensual(mg.mesGasNum, mg.mesGasAnio);
-    res.render('admin-liquidacion', { liq: liq, mesLabel: mg.mesLabel, error: liq.error || null, miUf: req.session.usuario.uf });
+    var ma = getMesActivo(di);
+    var liq = await sheets.leerLiquidacionMensual(ma.mesGasNum, ma.mesGasAnio);
+    res.render('admin-liquidacion', { liq: liq, mesLabel: ma.mesLabel, error: liq.error || null, miUf: req.session.usuario.uf });
   } catch (e) { res.render('admin-liquidacion', { liq: { datos: [] }, mesLabel: '', error: e.message, miUf: req.session.usuario.uf }); }
 });
 
@@ -211,9 +234,9 @@ app.post('/admin/test-email', requireAdmin, async function (req, res) {
 app.get('/admin/liquidacion', requireAdmin, async function (req, res) {
   try {
     var di = await sheets.leerDatosInicio();
-    var mg = getMesGastos(di);
-    var liq = await sheets.leerLiquidacionMensual(mg.mesGasNum, mg.mesGasAnio);
-    res.render('admin-liquidacion', { liq: liq, mesLabel: mg.mesLabel, error: liq.error || null, miUf: null });
+    var ma = getMesActivo(di);
+    var liq = await sheets.leerLiquidacionMensual(ma.mesGasNum, ma.mesGasAnio);
+    res.render('admin-liquidacion', { liq: liq, mesLabel: ma.mesLabel, error: liq.error || null, miUf: null });
   } catch (e) { res.render('admin-liquidacion', { liq: { datos: [] }, mesLabel: '', error: e.message, miUf: null }); }
 });
 
