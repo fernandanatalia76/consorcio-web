@@ -102,6 +102,18 @@ h3{font-size:14px;margin-bottom:8px;color:#1a4a6e}
 .cf-deuda strong{color:#e65100}
 .gastos-main{min-width:0}
 
+/* Fila TOTAL al pie de cada tabla de gastos */
+.fila-total th{background:#1a4a6e!important;color:#fff!important;padding:8px 8px;font-size:12px;text-align:center;font-family:Menlo,Consolas,monospace}
+.fila-total th:first-child{text-align:left;letter-spacing:1px;font-family:inherit;font-weight:700}
+@media(max-width:640px){
+  table.rtable tfoot tr.fila-total{background:#1a4a6e!important;color:#fff!important}
+  table.rtable tfoot tr.fila-total th{background:transparent!important;color:#fff!important;text-align:right;display:flex;justify-content:space-between;font-family:Menlo,Consolas,monospace}
+  table.rtable tfoot tr.fila-total th::before{content:attr(data-label);color:#cfe2f3;font-weight:600;text-align:left;flex:0 0 45%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+  table.rtable tfoot tr.fila-total th:first-child::before{content:''}
+  table.rtable tfoot tr.fila-total th:first-child{text-align:left;font-weight:700;letter-spacing:1px;font-family:inherit}
+  table.rtable tfoot tr.fila-total th:empty{display:none}
+}
+
 /* ============ Alerta legal por deuda ============ */
 .alerta-legal{display:flex;align-items:center;gap:14px;background:#fce8e6;border-left:5px solid #c5221f;border-radius:8px;padding:14px 18px;margin-bottom:16px;box-shadow:0 2px 6px rgba(197,34,31,.15)}
 .alerta-icono{font-size:32px;line-height:1;flex-shrink:0}
