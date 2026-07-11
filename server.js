@@ -97,16 +97,28 @@ app.get('/registrar', function (req, res) { res.render('registrar', { error: nul
 app.post('/registrar', async function (req, res) {
   try {
     var uf = String(req.body.uf).trim();
+    var uf2 = String(req.body.uf2 || '').trim();
     var cuit = String(req.body.cuit || '').trim();
     var ufs = await sheets.leerUFs();
     var match = ufs.find(function (u) { return u.uf === uf; });
     if (!match) return res.render('registrar', { error: 'UF ' + uf + ' no encontrada.', ok: false });
+    var match2 = null;
+    if (uf2) {
+      if (uf2 === uf) return res.render('registrar', { error: 'La 2ª UF no puede ser igual a la primera.', ok: false });
+      match2 = ufs.find(function (u) { return u.uf === uf2; });
+      if (!match2) return res.render('registrar', { error: '2ª UF ' + uf2 + ' no encontrada.', ok: false });
+    }
     var r = await authLib.registrar(uf, cuit, match.propietario, req.body.email);
     if (!r.ok) return res.render('registrar', { error: r.error, ok: false });
+    if (uf2) {
+      var r2 = await authLib.registrar(uf2, cuit, match2.propietario, req.body.email);
+      if (!r2.ok) return res.render('registrar', { error: '1ª UF cargada, pero la 2ª falló: ' + r2.error, ok: false });
+    }
     // Notificar al admin (no bloqueante)
+    var listaUf = uf + (uf2 ? ' y ' + uf2 : '');
     mailer.enviar(process.env.ADMIN_EMAIL || process.env.SMTP_USER,
-      'Nueva solicitud — UF ' + uf,
-      'UF: ' + uf + '\nPropietario: ' + (match.propietario || '') + '\nCUIT: ' + cuit + '\nEmail: ' + (req.body.email || '') +
+      'Nueva solicitud — UF ' + listaUf,
+      'UF: ' + listaUf + '\nPropietario: ' + (match.propietario || '') + '\nCUIT: ' + cuit + '\nEmail: ' + (req.body.email || '') +
       '\n\nActivar en: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') + '/admin');
     res.render('registrar', { error: null, ok: true });
   } catch (e) { res.render('registrar', { error: e.message, ok: false }); }
@@ -185,24 +197,36 @@ app.post('/admin/activar', requireAdmin, async function (req, res) {
   var mailInfo = { intentado: false, ok: false, error: null, email: r.email || null };
   if (r.ok && r.email) {
     mailInfo.intentado = true;
+    var listaUf = (r.ufs && r.ufs.length > 1) ? r.ufs.join(' y ') : uf;
+    var textoExtra = (r.ufs && r.ufs.length > 1)
+      ? ('\nPodés ingresar con cualquiera de tus UF (' + listaUf + '), la contraseña es la misma.')
+      : '';
     var m = await mailer.enviar(r.email, 'Tu acceso al portal del Consorcio',
       'Hola,\n\nTu cuenta fue activada.\n\nIngresá a: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') +
-      '\nUsuario (UF): ' + uf + '\nContraseña: ' + pw + '\n\nSaludos,\nAdministración del Consorcio');
+      textoExtra +
+      '\nUsuario (UF): ' + (r.ufs ? r.ufs[0] : uf) + '\nContraseña: ' + pw + '\n\nSaludos,\nAdministración del Consorcio');
     mailInfo.ok = m.ok; mailInfo.error = m.error || null;
   }
-  req.session.flash = { tipo: 'credenciales', accion: 'activado', uf: uf, password: pw, mail: mailInfo };
+  req.session.flash = { tipo: 'credenciales', accion: 'activado', uf: uf, ufs: r.ufs || [uf], password: pw, mail: mailInfo };
   res.redirect('/admin');
 });
 
 app.post('/admin/desactivar', requireAdmin, async function (req, res) {
-  await authLib.desactivarUsuario(req.body.uf);
-  req.session.flash = { tipo: 'aviso', texto: 'Usuario ' + req.body.uf + ' dado de baja' };
+  var r = await authLib.desactivarUsuario(req.body.uf);
+  var texto = (r.ok && r.ufs && r.ufs.length > 1)
+    ? ('Usuario dado de baja: UF ' + r.ufs.join(' y '))
+    : ('Usuario ' + req.body.uf + ' dado de baja');
+  req.session.flash = { tipo: 'aviso', texto: texto };
   res.redirect('/admin');
 });
 
 app.post('/admin/eliminar', requireAdmin, async function (req, res) {
   var r = await authLib.eliminarUsuario(req.body.uf);
-  req.session.flash = { tipo: 'aviso', texto: r.ok ? ('Usuario ' + req.body.uf + ' eliminado') : ('Error: ' + r.error) };
+  var texto;
+  if (!r.ok) texto = 'Error: ' + r.error;
+  else if (r.ufs && r.ufs.length > 1) texto = 'Usuarios eliminados: UF ' + r.ufs.join(' y ');
+  else texto = 'Usuario ' + req.body.uf + ' eliminado';
+  req.session.flash = { tipo: 'aviso', texto: texto };
   res.redirect('/admin');
 });
 
@@ -212,12 +236,17 @@ app.post('/admin/blanquear', requireAdmin, async function (req, res) {
   var mailInfo = { intentado: false, ok: false, error: null, email: r.email || null };
   if (r.ok && r.email) {
     mailInfo.intentado = true;
+    var listaUf = (r.ufs && r.ufs.length > 1) ? r.ufs.join(' y ') : uf;
+    var textoExtra = (r.ufs && r.ufs.length > 1)
+      ? ('\nPodés ingresar con cualquiera de tus UF (' + listaUf + '), la contraseña es la misma.')
+      : '';
     var m = await mailer.enviar(r.email, 'Nueva contraseña — Portal del Consorcio',
       'Hola,\n\nTu contraseña fue actualizada.\n\nIngresá a: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') +
-      '\nUsuario (UF): ' + uf + '\nNueva contraseña: ' + pw + '\n\nSaludos,\nAdministración del Consorcio');
+      textoExtra +
+      '\nUsuario (UF): ' + (r.ufs ? r.ufs[0] : uf) + '\nNueva contraseña: ' + pw + '\n\nSaludos,\nAdministración del Consorcio');
     mailInfo.ok = m.ok; mailInfo.error = m.error || null;
   }
-  req.session.flash = { tipo: 'credenciales', accion: 'blanqueada', uf: uf, password: pw, mail: mailInfo };
+  req.session.flash = { tipo: 'credenciales', accion: 'blanqueada', uf: uf, ufs: r.ufs || [uf], password: pw, mail: mailInfo };
   res.redirect('/admin');
 });
 
