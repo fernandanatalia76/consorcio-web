@@ -65,8 +65,13 @@
         <div class="resumen-item" style="background:#fce8e6"><div class="resumen-label">Total débitos</div><div class="resumen-valor"><%= money(cashflow.debitosProveedores) %></div></div>
         <div class="resumen-item" style="background:#e8f0fe"><div class="resumen-label">Saldo final</div><div class="resumen-valor"><%= money(cashflow.saldoFinal) %></div></div>
       </div>
-      <% if (cashflow.deudaProveedores && cashflow.deudaProveedores !== '0' && cashflow.deudaProveedores !== '$0,00') { %>
-      <div class="deuda-box"><strong>Deuda a proveedores:</strong> <%= money(cashflow.deudaProveedores) %><% if (cashflow.totalGastos) { %> <span class="nota">(Total gastos: <%= money(cashflow.totalGastos) %>)</span><% } %></div>
+      <% var tieneDeuda = cashflow.deudaProveedores && cashflow.deudaProveedores !== '0' && cashflow.deudaProveedores !== '$0,00';
+         var tieneTotal = cashflow.totalGastos && cashflow.totalGastos !== '0' && cashflow.totalGastos !== '$0,00'; %>
+      <% if (tieneDeuda || tieneTotal) { %>
+      <div class="deuda-box">
+        <strong>Deuda a proveedores:</strong> <%= tieneDeuda ? money(cashflow.deudaProveedores) : '—' %>
+        <% if (tieneTotal) { %><span class="nota">(Total gastos: <%= money(cashflow.totalGastos) %>)</span><% } %>
+      </div>
       <% } %>
     </div>
     <% } %>
@@ -91,7 +96,7 @@
         </tr>
         <% }); %>
       </tbody>
-      <tfoot><tr class="fila-total"><th colspan="3">TOTAL</th><th data-label="Importe"><%= sumCol(ordinarios,'importe') %></th><th data-label="Gastos"><%= sumCol(ordinarios,'montoDebitado') %></th><th></th></tr></tfoot>
+      <tfoot><tr class="fila-total"><th colspan="3">TOTAL</th><th></th><th data-label="Gastos"><%= sumCol(ordinarios,'montoDebitado') %></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
 
@@ -127,7 +132,7 @@
         </tr>
         <% }); %>
       </tbody>
-      <tfoot><tr class="fila-total"><th colspan="2">TOTAL</th><th data-label="Importe"><%= sumCol(impuestos,'importe') %></th><th data-label="Gastos"><%= sumCol(impuestos,'montoDebitado') %></th><th></th></tr></tfoot>
+      <tfoot><tr class="fila-total"><th colspan="2">TOTAL</th><th></th><th data-label="Gastos"><%= sumCol(impuestos,'montoDebitado') %></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
   </section>
