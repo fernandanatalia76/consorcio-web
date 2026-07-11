@@ -28,18 +28,24 @@
 <% if (flash && flash.tipo === 'credenciales') { %>
   <%
     var accionTxt = flash.accion === 'blanqueada' ? 'blanqueada' : 'activada';
+    var ufsFlash = (flash.ufs && flash.ufs.length) ? flash.ufs : [flash.uf];
+    var ufsLabel = ufsFlash.join(' y ');
+    var textoUsuario = ufsFlash.length > 1
+      ? 'Podés ingresar con cualquiera de tus UF (' + ufsLabel + '), la contraseña es la misma.\n'
+      : '';
     var textoWhatsApp = 'Hola! Ya podés ingresar al portal del Consorcio.\n' +
       'Web: https://consorcio-web.onrender.com\n' +
-      'Usuario (UF): ' + flash.uf + '\n' +
+      textoUsuario +
+      'Usuario (UF): ' + ufsFlash[0] + '\n' +
       'Contraseña: ' + flash.password;
   %>
   <div class="cred-card">
     <div class="cred-head">
       <span class="cred-check">✅</span>
-      <span>Cuenta <%= accionTxt %> — UF <%= flash.uf %></span>
+      <span>Cuenta <%= accionTxt %> — UF <%= ufsLabel %></span>
     </div>
     <div class="cred-body">
-      <div class="cred-row"><span class="cred-lbl">Usuario</span><span class="cred-val"><%= flash.uf %></span></div>
+      <div class="cred-row"><span class="cred-lbl">Usuario<% if (ufsFlash.length > 1) { %> (cualquiera)<% } %></span><span class="cred-val"><%= ufsLabel %></span></div>
       <div class="cred-row"><span class="cred-lbl">Contraseña</span><span class="cred-val cred-pw"><%= flash.password %></span></div>
     </div>
     <div class="cred-actions">
@@ -110,7 +116,7 @@
   <table class="tabla rtable"><thead><tr><th>UF</th><th>CUIT</th><th>Propietario</th><th>Email</th><th>Acción</th></tr></thead><tbody>
     <% pendientes.forEach(function(u) { %>
     <tr>
-      <td data-label="UF"><%= u.uf %></td>
+      <td data-label="UF"><strong><%= u.uf %></strong><% if (u.ufsAgrupadas && u.ufsAgrupadas.length > 1) { %><br><span class="uf-extra">+ UF <%= u.ufsAgrupadas.filter(function(x){return x!==u.uf;}).join(", ") %></span><% } %></td>
       <td data-label="CUIT"><%= u.cuit||'' %></td>
       <td data-label="Propietario"><%= u.propietario %></td>
       <td data-label="Email"><%= u.email||'' %></td>
@@ -143,7 +149,7 @@
   <table class="tabla rtable"><thead><tr><th>UF</th><th>CUIT</th><th>Propietario</th><th>Email</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
     <% activos.forEach(function(u) { %>
     <tr>
-      <td data-label="UF"><%= u.uf %></td>
+      <td data-label="UF"><strong><%= u.uf %></strong><% if (u.ufsAgrupadas && u.ufsAgrupadas.length > 1) { %><br><span class="uf-extra">+ UF <%= u.ufsAgrupadas.filter(function(x){return x!==u.uf;}).join(", ") %></span><% } %></td>
       <td data-label="CUIT"><%= u.cuit||'' %></td>
       <td data-label="Propietario"><%= u.propietario %></td>
       <td data-label="Email"><%= u.email||'' %></td>
