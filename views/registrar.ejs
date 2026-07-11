@@ -7,12 +7,45 @@
   <form method="POST" action="/registrar">
     <label>N° de Unidad Funcional</label>
     <input type="text" name="uf" placeholder="Ej: 10" required>
-    <label>CUIT (11 dígitos, sin guiones)</label>
-    <input type="text" name="cuit" placeholder="Ej: 20123456789" maxlength="11" required>
+
+    <div id="uf2-wrap" style="display:none">
+      <label>N° de 2ª Unidad Funcional</label>
+      <input type="text" name="uf2" id="uf2-input" placeholder="Ej: 25 (cochera)">
+      <p class="nota" style="margin-top:2px">
+        <a href="#" id="uf2-quitar">Quitar 2ª UF</a>
+      </p>
+    </div>
+    <p class="auth-link" id="uf2-agregar-wrap" style="text-align:left;margin-top:6px;margin-bottom:4px">
+      <a href="#" id="uf2-agregar">+ Agregar 2ª UF (si tenés cochera u otra unidad)</a>
+    </p>
+
+    <label>CUIT</label>
+    <input type="text" name="cuit" placeholder="Ej: 20123456789" required>
     <label>Email</label>
     <input type="email" name="email" placeholder="Ej: nombre@gmail.com" required>
     <button type="submit" class="btn btn-primary">Solicitar acceso</button>
   </form>
+  <script>
+    (function(){
+      var wrap = document.getElementById('uf2-wrap');
+      var input = document.getElementById('uf2-input');
+      var linkAdd = document.getElementById('uf2-agregar');
+      var linkAddWrap = document.getElementById('uf2-agregar-wrap');
+      var linkRm = document.getElementById('uf2-quitar');
+      linkAdd.addEventListener('click', function(e){
+        e.preventDefault();
+        wrap.style.display = 'block';
+        linkAddWrap.style.display = 'none';
+        input.focus();
+      });
+      linkRm.addEventListener('click', function(e){
+        e.preventDefault();
+        input.value = '';
+        wrap.style.display = 'none';
+        linkAddWrap.style.display = 'block';
+      });
+    })();
+  </script>
   <% } %>
   <p class="auth-link"><a href="/login">← Volver al login</a></p>
 </div>
