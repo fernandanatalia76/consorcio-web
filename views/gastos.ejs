@@ -121,18 +121,17 @@
 
     <% if (impuestos.length) { %>
     <div class="card"><h3>Impuestos y Comisiones bancarias</h3><div style="overflow-x:auto">
-      <table class="tabla rtable"><thead><tr><th>Concepto</th><th>N° Comprobante</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
+      <table class="tabla rtable"><thead><tr><th>Concepto</th><th>N° Comprobante</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
         <% impuestos.forEach(function(g) { %>
         <tr>
           <td data-label="Concepto"><%= g.proveedor %></td>
           <td data-label="N° Comprobante"><%= comp(g.nroComprobante) %></td>
-          <td data-label="Importe"><%= money(g.importe) %></td>
           <td data-label="Gastos"><%= money(g.montoDebitado) %></td>
           <td data-label="Estado"><span class="badge badge-total"><%= g.estado %></span></td>
         </tr>
         <% }); %>
       </tbody>
-      <tfoot><tr class="fila-total"><th colspan="2">TOTAL</th><th></th><th data-label="Gastos"><%= sumCol(impuestos,'montoDebitado') %></th><th></th></tr></tfoot>
+      <tfoot><tr class="fila-total"><th colspan="2">TOTAL</th><th data-label="Gastos"><%= sumCol(impuestos,'montoDebitado') %></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
   </section>
