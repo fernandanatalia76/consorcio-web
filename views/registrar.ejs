@@ -5,6 +5,12 @@
   <% if (error) { %><div class="msg error"><%= error %></div><% } %>
   <% if (ok) { %><div class="msg success">✅ Solicitud registrada. El administrador te asignará una contraseña y la recibirás por email.</div><% } else { %>
   <form method="POST" action="/registrar">
+    <label>Soy</label>
+    <div class="tipo-radios">
+      <label class="tipo-opt"><input type="radio" name="tipo" value="propietario" checked> Propietario</label>
+      <label class="tipo-opt"><input type="radio" name="tipo" value="inquilino"> Inquilino</label>
+    </div>
+
     <label>N° de Unidad Funcional</label>
     <input type="text" name="uf" placeholder="Ej: 10" required>
 

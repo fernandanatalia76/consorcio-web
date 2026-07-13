@@ -42,7 +42,7 @@
   <div class="cred-card">
     <div class="cred-head">
       <span class="cred-check">✅</span>
-      <span>Cuenta <%= accionTxt %> — UF <%= ufsLabel %></span>
+      <span>Cuenta <%= accionTxt %> — UF <%= ufsLabel %><% if (flash.tipoUsuario) { %> <span class="chip-tipo <%= flash.tipoUsuario %>" style="font-size:11px"><%= flash.tipoUsuario %></span><% } %></span>
     </div>
     <div class="cred-body">
       <div class="cred-row"><span class="cred-lbl">Usuario<% if (ufsFlash.length > 1) { %> (cualquiera)<% } %></span><span class="cred-val"><%= ufsLabel %></span></div>
@@ -118,18 +118,20 @@
     <tr>
       <td data-label="UF"><strong><%= u.uf %></strong><% if (u.ufsAgrupadas && u.ufsAgrupadas.length > 1) { %><br><span class="uf-extra">+ UF <%= u.ufsAgrupadas.filter(function(x){return x!==u.uf;}).join(", ") %></span><% } %></td>
       <td data-label="CUIT"><%= u.cuit||'' %></td>
-      <td data-label="Propietario"><%= u.propietario %></td>
+      <td data-label="Propietario"><%= u.propietario %><span class="chip-tipo <%= u.tipo||'propietario' %>"><%= u.tipo||'propietario' %></span></td>
       <td data-label="Email"><%= u.email||'' %></td>
       <td data-label="Acción">
         <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;align-items:center">
           <form method="POST" action="/admin/activar" style="display:flex;gap:4px">
             <input type="hidden" name="uf" value="<%= u.uf %>">
+            <input type="hidden" name="tipo" value="<%= u.tipo||'propietario' %>">
             <input type="text" name="password" placeholder="Contraseña" required style="width:120px">
             <button type="submit" class="btn btn-sm">Activar</button>
           </form>
           <form method="POST" action="/admin/eliminar"
-                onsubmit="return confirm('¿Rechazar la solicitud de UF <%= u.uf %> (<%= u.propietario %>)?\n\nSe borra el registro; si quiere volver a entrar, tiene que registrarse otra vez.');">
+                onsubmit="return confirm('¿Rechazar la solicitud de UF <%= u.uf %> (<%= u.propietario %> — <%= u.tipo||'propietario' %>)?\n\nSe borra el registro; si quiere volver a entrar, tiene que registrarse otra vez.');">
             <input type="hidden" name="uf" value="<%= u.uf %>">
+            <input type="hidden" name="tipo" value="<%= u.tipo||'propietario' %>">
             <button type="submit" class="btn btn-sm" style="background:#c5221f">Rechazar</button>
           </form>
         </div>
@@ -151,24 +153,27 @@
     <tr>
       <td data-label="UF"><strong><%= u.uf %></strong><% if (u.ufsAgrupadas && u.ufsAgrupadas.length > 1) { %><br><span class="uf-extra">+ UF <%= u.ufsAgrupadas.filter(function(x){return x!==u.uf;}).join(", ") %></span><% } %></td>
       <td data-label="CUIT"><%= u.cuit||'' %></td>
-      <td data-label="Propietario"><%= u.propietario %></td>
+      <td data-label="Propietario"><%= u.propietario %><span class="chip-tipo <%= u.tipo||'propietario' %>"><%= u.tipo||'propietario' %></span></td>
       <td data-label="Email"><%= u.email||'' %></td>
       <td data-label="Estado"><span class="badge badge-total">Activo</span></td>
       <td data-label="Acciones">
         <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap">
           <form method="POST" action="/admin/blanquear" style="display:flex;gap:4px">
             <input type="hidden" name="uf" value="<%= u.uf %>">
+            <input type="hidden" name="tipo" value="<%= u.tipo||'propietario' %>">
             <input type="text" name="password" placeholder="Nueva clave" required style="width:100px">
             <button type="submit" class="btn btn-sm">Blanquear</button>
           </form>
           <form method="POST" action="/admin/desactivar"
-                onsubmit="return confirm('¿Dar de baja a UF <%= u.uf %>? Pierde el acceso pero queda en la lista.');">
+                onsubmit="return confirm('¿Dar de baja a UF <%= u.uf %> (<%= u.tipo||'propietario' %>)? Pierde el acceso pero queda en la lista.');">
             <input type="hidden" name="uf" value="<%= u.uf %>">
+            <input type="hidden" name="tipo" value="<%= u.tipo||'propietario' %>">
             <button type="submit" class="btn btn-sm" style="background:#e65100">Baja</button>
           </form>
           <form method="POST" action="/admin/eliminar"
-                onsubmit="return confirm('¿ELIMINAR definitivamente a UF <%= u.uf %> (<%= u.propietario %>)?\n\nEl registro se borra; si vuelve a necesitar entrar, debe registrarse de nuevo.');">
+                onsubmit="return confirm('¿ELIMINAR definitivamente a UF <%= u.uf %> (<%= u.propietario %> — <%= u.tipo||'propietario' %>)?\n\nEl registro se borra; si vuelve a necesitar entrar, debe registrarse de nuevo.');">
             <input type="hidden" name="uf" value="<%= u.uf %>">
+            <input type="hidden" name="tipo" value="<%= u.tipo||'propietario' %>">
             <button type="submit" class="btn btn-sm" style="background:#c5221f">Eliminar</button>
           </form>
         </div>
