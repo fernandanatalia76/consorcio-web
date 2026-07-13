@@ -131,10 +131,10 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
   try {
     var di = await sheets.leerDatosInicio();
     var ma = getMesActivo(di);
-    // Titulo: mes activo (Julio 2026). Datos: solapa del mes anterior (Liquidacion Junio 2026).
-    var liq = await sheets.leerLiquidacionMensual(ma.mesGasNum, ma.mesGasAnio);
+    // Empezamos por el mes anterior al activo y retrocedemos hasta encontrar la solapa.
+    var liq = await sheets.leerLiquidacionMasReciente(ma.mesGasNum, ma.mesGasAnio);
     var dato = liq.datos.find(function (d) { return d.uf === req.session.usuario.uf; });
-    res.render('liquidacion', { dato: dato, mesLabel: ma.mesLabel, error: liq.error || null, dia1: di['Día 1er vencimiento'] || '6', dia2: di['Día 2do vencimiento'] || '13', mesVenc: ma.mesNum, anioVenc: ma.anio });
+    res.render('liquidacion', { dato: dato, mesLabel: liq.mesLabel, error: liq.error || null, dia1: di['Día 1er vencimiento'] || '6', dia2: di['Día 2do vencimiento'] || '13', mesVenc: ma.mesNum, anioVenc: ma.anio });
   } catch (e) { res.render('liquidacion', { dato: null, mesLabel: '', error: e.message, dia1: '', dia2: '', mesVenc: '', anioVenc: '' }); }
 });
 
@@ -143,8 +143,8 @@ app.get('/liquidacion-completa', requireLogin, async function (req, res) {
   try {
     var di = await sheets.leerDatosInicio();
     var ma = getMesActivo(di);
-    var liq = await sheets.leerLiquidacionMensual(ma.mesGasNum, ma.mesGasAnio);
-    res.render('admin-liquidacion', { liq: liq, mesLabel: ma.mesLabel, error: liq.error || null, miUf: req.session.usuario.uf });
+    var liq = await sheets.leerLiquidacionMasReciente(ma.mesGasNum, ma.mesGasAnio);
+    res.render('admin-liquidacion', { liq: liq, mesLabel: liq.mesLabel, error: liq.error || null, miUf: req.session.usuario.uf });
   } catch (e) { res.render('admin-liquidacion', { liq: { datos: [] }, mesLabel: '', error: e.message, miUf: req.session.usuario.uf }); }
 });
 
@@ -314,8 +314,8 @@ app.get('/admin/liquidacion', requireAdmin, async function (req, res) {
   try {
     var di = await sheets.leerDatosInicio();
     var ma = getMesActivo(di);
-    var liq = await sheets.leerLiquidacionMensual(ma.mesGasNum, ma.mesGasAnio);
-    res.render('admin-liquidacion', { liq: liq, mesLabel: ma.mesLabel, error: liq.error || null, miUf: null });
+    var liq = await sheets.leerLiquidacionMasReciente(ma.mesGasNum, ma.mesGasAnio);
+    res.render('admin-liquidacion', { liq: liq, mesLabel: liq.mesLabel, error: liq.error || null, miUf: null });
   } catch (e) { res.render('admin-liquidacion', { liq: { datos: [] }, mesLabel: '', error: e.message, miUf: null }); }
 });
 
