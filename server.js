@@ -87,7 +87,7 @@ app.get('/', function (req, res) { if (req.session.usuario) return res.redirect(
 app.get('/login', function (req, res) { res.render('login', { error: null }); });
 app.post('/login', async function (req, res) {
   try {
-    var r = await authLib.login(req.body.uf, req.body.password);
+    var r = await authLib.login(req.body.uf, req.body.password, req.body.tipo);
     if (!r.ok) return res.render('login', { error: r.error });
     req.session.usuario = r.usuario;
     res.redirect(r.usuario.rol === 'admin' ? '/admin' : '/mi-liquidacion');
@@ -99,6 +99,8 @@ app.post('/registrar', async function (req, res) {
     var uf = String(req.body.uf).trim();
     var uf2 = String(req.body.uf2 || '').trim();
     var cuit = String(req.body.cuit || '').trim();
+    var tipo = String(req.body.tipo || 'propietario').toLowerCase();
+    if (tipo !== 'inquilino') tipo = 'propietario';
     var ufs = await sheets.leerUFs();
     var match = ufs.find(function (u) { return u.uf === uf; });
     if (!match) return res.render('registrar', { error: 'UF ' + uf + ' no encontrada.', ok: false });
@@ -108,17 +110,16 @@ app.post('/registrar', async function (req, res) {
       match2 = ufs.find(function (u) { return u.uf === uf2; });
       if (!match2) return res.render('registrar', { error: '2ª UF ' + uf2 + ' no encontrada.', ok: false });
     }
-    var r = await authLib.registrar(uf, cuit, match.propietario, req.body.email);
+    var r = await authLib.registrar(uf, cuit, match.propietario, req.body.email, tipo);
     if (!r.ok) return res.render('registrar', { error: r.error, ok: false });
     if (uf2) {
-      var r2 = await authLib.registrar(uf2, cuit, match2.propietario, req.body.email);
+      var r2 = await authLib.registrar(uf2, cuit, match2.propietario, req.body.email, tipo);
       if (!r2.ok) return res.render('registrar', { error: '1ª UF cargada, pero la 2ª falló: ' + r2.error, ok: false });
     }
-    // Notificar al admin (no bloqueante)
     var listaUf = uf + (uf2 ? ' y ' + uf2 : '');
     mailer.enviar(process.env.ADMIN_EMAIL || process.env.SMTP_USER,
-      'Nueva solicitud — UF ' + listaUf,
-      'UF: ' + listaUf + '\nPropietario: ' + (match.propietario || '') + '\nCUIT: ' + cuit + '\nEmail: ' + (req.body.email || '') +
+      'Nueva solicitud — UF ' + listaUf + ' (' + tipo + ')',
+      'UF: ' + listaUf + '\nTipo: ' + tipo + '\nPropietario: ' + (match.propietario || '') + '\nCUIT: ' + cuit + '\nEmail: ' + (req.body.email || '') +
       '\n\nActivar en: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') + '/admin');
     res.render('registrar', { error: null, ok: true });
   } catch (e) { res.render('registrar', { error: e.message, ok: false }); }
@@ -156,25 +157,69 @@ app.get('/mis-pagos', requireLogin, async function (req, res) {
   } catch (e) { res.render('historial', { pagos: [], error: e.message }); }
 });
 
+// ==================== CACHE DE GASTOS ====================
+// Cache global compartida en memoria. Se actualiza solo cuando el admin
+// toca el boton "Actualizar datos" en la pagina Gastos.
+// Al arrancar el servidor esta vacia (los usuarios ven "sin datos publicados").
+var cacheGastos = {
+  publicado: false,
+  fechaHora: null, // Date de la ultima actualizacion
+  quienActualizo: null,
+  datos: null      // { gastos, impuestos, cashflow, cashflowHistorico, mesLabel }
+};
+
+async function cargarGastosDesdeSheets() {
+  var di = await sheets.leerDatosInicio();
+  var mg = getMesGastos(di);
+  var todosGastos = await sheets.leerGastos(mg.mesTxt);
+  var gastos = [], impuestos = [];
+  todosGastos.forEach(function (g) {
+    if (String(g.proveedor || '').toLowerCase().indexOf('santander') !== -1) impuestos.push(g); else gastos.push(g);
+  });
+  var cfData = await sheets.leerCashFlow();
+  var mesNorm = (mg.meses[mg.mesGasNum - 1] || '').toLowerCase();
+  var cashflow = cfData.find(function (cf) { var t = String(cf.mes || '').toLowerCase(); return t.indexOf(mesNorm) !== -1 && t.indexOf(String(mg.mesGasAnio)) !== -1; }) || null;
+  var deudaProv = await sheets.leerDeudaProveedores();
+  var totalGastos = await sheets.leerTotalGastos();
+  if (cashflow) { cashflow.deudaProveedores = deudaProv; cashflow.totalGastos = totalGastos; cashflow.facturas = ''; }
+  return { gastos: gastos, impuestos: impuestos, cashflow: cashflow, cashflowHistorico: cfData, mesLabel: mg.mesLabel };
+}
+
 app.get('/gastos', requireLogin, async function (req, res) {
-  try {
-    var di = await sheets.leerDatosInicio();
-    var mg = getMesGastos(di);
-    var todosGastos = await sheets.leerGastos(mg.mesTxt);
-    var gastos = [], impuestos = [];
-    todosGastos.forEach(function (g) {
-      if (String(g.proveedor || '').toLowerCase().indexOf('santander') !== -1) impuestos.push(g); else gastos.push(g);
+  var esAdmin = req.session.usuario.rol === 'admin';
+  if (!cacheGastos.publicado) {
+    return res.render('gastos', {
+      gastos: [], impuestos: [], cashflow: null, cashflowHistorico: [],
+      mesLabel: '', error: null,
+      cache: { publicado: false, fechaHora: null, quienActualizo: null, esAdmin: esAdmin }
     });
-    var cfData = await sheets.leerCashFlow();
-    var mesNorm = (mg.meses[mg.mesGasNum - 1] || '').toLowerCase();
-    var cashflow = cfData.find(function (cf) { var t = String(cf.mes || '').toLowerCase(); return t.indexOf(mesNorm) !== -1 && t.indexOf(String(mg.mesGasAnio)) !== -1; }) || null;
-    // La deuda a proveedores viene de "PDF saldos y gastos"!E6, no de la columna I de Cash Flow.
-    var deudaProv = await sheets.leerDeudaProveedores();
-    // El total general de gastos del mes viene de "Gastos"!J2.
-    var totalGastos = await sheets.leerTotalGastos();
-    if (cashflow) { cashflow.deudaProveedores = deudaProv; cashflow.totalGastos = totalGastos; cashflow.facturas = ''; }
-    res.render('gastos', { gastos: gastos, impuestos: impuestos, cashflow: cashflow, cashflowHistorico: cfData, mesLabel: mg.mesLabel, error: null });
-  } catch (e) { res.render('gastos', { gastos: [], impuestos: [], cashflow: null, cashflowHistorico: [], mesLabel: '', error: e.message }); }
+  }
+  var d = cacheGastos.datos;
+  res.render('gastos', {
+    gastos: d.gastos, impuestos: d.impuestos, cashflow: d.cashflow,
+    cashflowHistorico: d.cashflowHistorico, mesLabel: d.mesLabel, error: null,
+    cache: {
+      publicado: true,
+      fechaHora: cacheGastos.fechaHora,
+      quienActualizo: cacheGastos.quienActualizo,
+      esAdmin: esAdmin
+    }
+  });
+});
+
+// Solo el admin puede forzar la actualizacion. Al terminar, redirige a /gastos.
+app.post('/admin/gastos/actualizar', requireAdmin, async function (req, res) {
+  try {
+    var d = await cargarGastosDesdeSheets();
+    cacheGastos.publicado = true;
+    cacheGastos.fechaHora = new Date();
+    cacheGastos.quienActualizo = req.session.usuario.uf === 'admin' ? 'admin' : req.session.usuario.uf;
+    cacheGastos.datos = d;
+    req.session.flash = { tipo: 'aviso', texto: 'Datos de Gastos actualizados.' };
+  } catch (e) {
+    req.session.flash = { tipo: 'aviso', texto: 'Error al actualizar: ' + e.message };
+  }
+  res.redirect('/gastos');
 });
 
 // ==================== ADMIN ====================
@@ -192,8 +237,8 @@ app.get('/admin', requireAdmin, async function (req, res) {
 });
 
 app.post('/admin/activar', requireAdmin, async function (req, res) {
-  var uf = req.body.uf, pw = req.body.password;
-  var r = await authLib.activarUsuario(uf, pw);
+  var uf = req.body.uf, pw = req.body.password, tipo = req.body.tipo;
+  var r = await authLib.activarUsuario(uf, pw, tipo);
   var mailInfo = { intentado: false, ok: false, error: null, email: r.email || null };
   if (r.ok && r.email) {
     mailInfo.intentado = true;
@@ -204,35 +249,35 @@ app.post('/admin/activar', requireAdmin, async function (req, res) {
     var m = await mailer.enviar(r.email, 'Tu acceso al portal del Consorcio',
       'Hola,\n\nTu cuenta fue activada.\n\nIngresá a: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') +
       textoExtra +
-      '\nUsuario (UF): ' + (r.ufs ? r.ufs[0] : uf) + '\nContraseña: ' + pw + '\n\nSaludos,\nAdministración del Consorcio');
+      '\nUsuario (UF): ' + (r.ufs ? r.ufs[0] : uf) + '\nTipo: ' + (r.tipo || tipo || 'propietario') + '\nContraseña: ' + pw + '\n\nSaludos,\nAdministración del Consorcio');
     mailInfo.ok = m.ok; mailInfo.error = m.error || null;
   }
-  req.session.flash = { tipo: 'credenciales', accion: 'activado', uf: uf, ufs: r.ufs || [uf], password: pw, mail: mailInfo };
+  req.session.flash = { tipo: 'credenciales', accion: 'activado', uf: uf, ufs: r.ufs || [uf], password: pw, tipoUsuario: r.tipo || tipo || 'propietario', mail: mailInfo };
   res.redirect('/admin');
 });
 
 app.post('/admin/desactivar', requireAdmin, async function (req, res) {
-  var r = await authLib.desactivarUsuario(req.body.uf);
+  var r = await authLib.desactivarUsuario(req.body.uf, req.body.tipo);
   var texto = (r.ok && r.ufs && r.ufs.length > 1)
-    ? ('Usuario dado de baja: UF ' + r.ufs.join(' y '))
-    : ('Usuario ' + req.body.uf + ' dado de baja');
+    ? ('Usuario dado de baja: UF ' + r.ufs.join(' y ') + ' (' + (r.tipo || '') + ')')
+    : ('Usuario ' + req.body.uf + ' (' + (req.body.tipo || '') + ') dado de baja');
   req.session.flash = { tipo: 'aviso', texto: texto };
   res.redirect('/admin');
 });
 
 app.post('/admin/eliminar', requireAdmin, async function (req, res) {
-  var r = await authLib.eliminarUsuario(req.body.uf);
+  var r = await authLib.eliminarUsuario(req.body.uf, req.body.tipo);
   var texto;
   if (!r.ok) texto = 'Error: ' + r.error;
-  else if (r.ufs && r.ufs.length > 1) texto = 'Usuarios eliminados: UF ' + r.ufs.join(' y ');
-  else texto = 'Usuario ' + req.body.uf + ' eliminado';
+  else if (r.ufs && r.ufs.length > 1) texto = 'Usuarios eliminados: UF ' + r.ufs.join(' y ') + ' (' + (r.tipo || '') + ')';
+  else texto = 'Usuario ' + req.body.uf + ' (' + (req.body.tipo || '') + ') eliminado';
   req.session.flash = { tipo: 'aviso', texto: texto };
   res.redirect('/admin');
 });
 
 app.post('/admin/blanquear', requireAdmin, async function (req, res) {
-  var uf = req.body.uf, pw = req.body.password;
-  var r = await authLib.blanquearClave(uf, pw);
+  var uf = req.body.uf, pw = req.body.password, tipo = req.body.tipo;
+  var r = await authLib.blanquearClave(uf, pw, tipo);
   var mailInfo = { intentado: false, ok: false, error: null, email: r.email || null };
   if (r.ok && r.email) {
     mailInfo.intentado = true;
@@ -243,10 +288,10 @@ app.post('/admin/blanquear', requireAdmin, async function (req, res) {
     var m = await mailer.enviar(r.email, 'Nueva contraseña — Portal del Consorcio',
       'Hola,\n\nTu contraseña fue actualizada.\n\nIngresá a: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') +
       textoExtra +
-      '\nUsuario (UF): ' + (r.ufs ? r.ufs[0] : uf) + '\nNueva contraseña: ' + pw + '\n\nSaludos,\nAdministración del Consorcio');
+      '\nUsuario (UF): ' + (r.ufs ? r.ufs[0] : uf) + '\nTipo: ' + (r.tipo || tipo || 'propietario') + '\nNueva contraseña: ' + pw + '\n\nSaludos,\nAdministración del Consorcio');
     mailInfo.ok = m.ok; mailInfo.error = m.error || null;
   }
-  req.session.flash = { tipo: 'credenciales', accion: 'blanqueada', uf: uf, ufs: r.ufs || [uf], password: pw, mail: mailInfo };
+  req.session.flash = { tipo: 'credenciales', accion: 'blanqueada', uf: uf, ufs: r.ufs || [uf], password: pw, tipoUsuario: r.tipo || tipo || 'propietario', mail: mailInfo };
   res.redirect('/admin');
 });
 
