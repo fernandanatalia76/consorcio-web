@@ -85,6 +85,39 @@ h3{font-size:14px;margin-bottom:8px;color:#1a4a6e}
 .cred-nota{font-size:11px;color:#5f6368;margin-top:8px;font-style:italic}
 .uf-extra{display:inline-block;font-size:10px;color:#5f6368;background:#e8f0fe;padding:1px 6px;border-radius:8px;margin-top:2px}
 
+/* Selector Propietario/Inquilino en login y registrar */
+.tipo-radios{display:flex;gap:6px;margin-bottom:10px}
+.tipo-opt{flex:1;display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #dadce0;border-radius:6px;cursor:pointer;font-size:13px;background:#fff;transition:.15s}
+.tipo-opt:hover{border-color:#1a73e8;background:#f8faff}
+.tipo-opt input{margin:0}
+.tipo-opt:has(input:checked){border-color:#1a4a6e;background:#e8f0fe}
+/* Chip de tipo en el panel de admin */
+.chip-tipo{display:inline-block;font-size:10px;font-weight:600;padding:1px 8px;border-radius:8px;margin-left:6px;text-transform:uppercase;letter-spacing:.3px}
+.chip-tipo.propietario{background:#e6f4ea;color:#137333}
+.chip-tipo.inquilino{background:#fef7e0;color:#e37400}
+
+/* Selector Propietario/Inquilino en login y registrar */
+.tipo-radios{display:flex;gap:6px;margin-bottom:10px}
+.tipo-opt{flex:1;display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #dadce0;border-radius:6px;cursor:pointer;font-size:13px;background:#fff;transition:.15s}
+.tipo-opt:hover{border-color:#1a73e8;background:#f8faff}
+.tipo-opt input{margin:0}
+.tipo-opt input:checked ~ *{color:#1a4a6e}
+.tipo-opt:has(input:checked){border-color:#1a4a6e;background:#e8f0fe}
+/* Chip de tipo en el panel de admin */
+.chip-tipo{display:inline-block;font-size:10px;font-weight:600;padding:1px 8px;border-radius:8px;margin-left:6px;text-transform:uppercase;letter-spacing:.3px}
+.chip-tipo.propietario{background:#e6f4ea;color:#137333}
+.chip-tipo.inquilino{background:#fef7e0;color:#e37400}
+
+/* Banner de "datos publicados" en Gastos */
+.cache-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:#e8f0fe;border-left:4px solid #1a4a6e;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+.cache-info{color:#1a4a6e}
+.cache-banner .btn{background:#1a4a6e}
+/* Estado vacio - todavia no hay publicacion */
+.cache-vacio{background:#fff;border:2px dashed #dadce0;border-radius:12px;padding:32px 24px;margin-bottom:20px;text-align:center}
+.cache-vacio-icono{font-size:48px;margin-bottom:12px}
+.cache-vacio h3{color:#3c4043;margin-bottom:10px}
+.cache-vacio p{color:#5f6368;font-size:14px;margin-bottom:16px}
+
 /* ============ Página de gastos con sidebar de Cash Flow ============ */
 .gastos-grid{display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:start}
 @media(max-width:900px){.gastos-grid{grid-template-columns:1fr}}
