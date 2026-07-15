@@ -106,32 +106,29 @@ h3{font-size:14px;margin-bottom:8px;color:#1a4a6e}
 .chip-tipo.inquilino{background:#fef7e0;color:#e37400}
 
 /* Tarjeta de Mi Liquidacion (una por UF) */
-.liq-card{background:#fff;border-radius:12px;border:1px solid #dadce0;padding:18px 20px;margin:16px 0}
+.liq-card{background:#fff;border-radius:12px;border:1px solid #dadce0;border-top:3px solid #1a4a6e;padding:18px 20px;margin:16px 0}
 .liq-card + .liq-card{margin-top:20px}
-.liq-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #dadce0}
+.liq-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .liq-titulo{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .liq-uf{font-size:18px;font-weight:700;color:#1a4a6e}
 .liq-desc{font-size:13px;color:#5f6368}
-/* Los dos vencimientos, centrados con separador vertical */
-.liq-vencs{display:flex;gap:12px;align-items:stretch;margin:0 0 16px}
-.liq-venc{flex:1;min-width:0;text-align:center;padding:10px 4px}
-.liq-venc-lbl{font-size:12px;color:#5f6368;margin-bottom:6px}
-.liq-venc-monto{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
-.liq-venc1{color:#137333}
-.liq-venc2{color:#e37400}
-.liq-venc-sep{width:1px;background:#dadce0;flex-shrink:0}
-/* Grid de detalle: forzar 5 columnas iguales que quepan en el renglon */
-.liq-detalle{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding-top:12px;border-top:1px solid #dadce0}
-.liq-det-item{min-width:0;padding:2px 4px}
+/* Total a pagar destacado */
+.liq-total-box{text-align:center;padding:16px;background:#f8faff;border-radius:10px;margin-bottom:14px}
+.liq-total-lbl{font-size:12px;color:#5f6368;margin-bottom:6px}
+.liq-total-monto{font-size:32px;font-weight:700;color:#137333;line-height:1.1;font-variant-numeric:tabular-nums}
+.liq-total-recargo{font-size:14px;color:#5f6368;margin-top:8px}
+.liq-total-recargo span{color:#e37400;font-weight:700;font-variant-numeric:tabular-nums}
+/* Grid de detalle: 5 columnas exactas */
+.liq-detalle{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.liq-det-item{min-width:0;padding:4px;text-align:center}
 .liq-det-lbl{font-size:11px;color:#5f6368;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .liq-det-val{font-size:13px;font-weight:600;color:#1a1a2e;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Celda de Deuda: siempre resaltada */
-.liq-det-deuda{background:#fce8e6;border-radius:8px;padding:6px 8px}
+.liq-det-deuda{background:#fce8e6;border-radius:8px}
 .liq-det-deuda .liq-det-lbl{color:#c5221f;font-weight:700}
 .liq-det-deuda .liq-det-val{color:#c5221f}
 @media(max-width:640px){
-  .liq-vencs{flex-direction:column;align-items:stretch;gap:8px}
-  .liq-venc-sep{width:100%;height:1px}
+  .liq-total-monto{font-size:26px}
   .liq-detalle{grid-template-columns:repeat(2,1fr)}
 }
 
