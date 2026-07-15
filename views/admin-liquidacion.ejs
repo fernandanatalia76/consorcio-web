@@ -1,11 +1,40 @@
 <%- include('header') %>
-<h1>Liquidación Completa — <%= mesLabel %></h1>
+<h1>Liquidación Completa<% if (mesLabel) { %> — <%= mesLabel %><% } %></h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
-<% if (typeof miUf !== 'undefined' && miUf) { %>
-<div class="msg success" style="background:#e8f0fe;color:#1a4a6e">Tu unidad (UF <%= miUf %>) aparece resaltada en la tabla.</div>
+
+<% if (cache && cache.publicado) { %>
+<div class="cache-banner">
+  <span class="cache-info">📅 Datos publicados el <strong><%= new Date(cache.fechaHora).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) %></strong></span>
+  <% if (cache.esAdmin) { %>
+    <form method="POST" action="/admin/liquidacion/actualizar" style="display:inline">
+      <input type="hidden" name="origen" value="/liquidacion-completa">
+      <button type="submit" class="btn btn-sm">🔄 Actualizar datos</button>
+    </form>
+  <% } %>
+</div>
+<% } else { %>
+<div class="cache-vacio">
+  <div class="cache-vacio-icono">📋</div>
+  <h3>La administración todavía no publicó los datos de Liquidación</h3>
+  <% if (cache && cache.esAdmin) { %>
+    <p>Tocá el botón para leer los datos de la planilla y publicarlos.</p>
+    <form method="POST" action="/admin/liquidacion/actualizar">
+      <input type="hidden" name="origen" value="/liquidacion-completa">
+      <button type="submit" class="btn btn-primary" style="width:auto;padding:10px 20px">🔄 Publicar / Actualizar datos</button>
+    </form>
+  <% } else { %>
+    <p>Cuando la administración actualice los datos, van a aparecer acá.</p>
+  <% } %>
+</div>
 <% } %>
 
-<% if (liq && liq.datos && liq.datos.length) { %>
+<% if (cache && cache.publicado && typeof misUfs !== 'undefined' && misUfs && misUfs.length) { %>
+<div class="msg success" style="background:#e8f0fe;color:#1a4a6e">
+  <% if (misUfs.length === 1) { %>Tu unidad (UF <%= misUfs[0] %>) aparece resaltada en la tabla.<% } else { %>Tus unidades (UF <%= misUfs.join(', UF ') %>) aparecen resaltadas en la tabla.<% } %>
+</div>
+<% } %>
+
+<% if (cache && cache.publicado && liq && liq.datos && liq.datos.length) { %>
 <div class="card" style="overflow-x:auto">
   <table class="tabla tabla-striped rtable">
     <thead>
@@ -19,7 +48,7 @@
     </thead>
     <tbody>
       <% liq.datos.forEach(function(d) { %>
-      <tr<% if (typeof miUf !== 'undefined' && miUf && d.uf === miUf) { %> class="fila-propia"<% } %>>
+      <tr<% if (typeof misUfs !== 'undefined' && misUfs && misUfs.indexOf(d.uf) !== -1) { %> class="fila-propia"<% } %>>
         <td data-label="UF"><strong><%= d.uf %></strong></td>
         <td data-label="Depto"><%= d.depto %></td>
         <td data-label="Propietario"><%= d.propietario %></td>
@@ -39,7 +68,7 @@
     </tbody>
   </table>
 </div>
-<% } else if (!error) { %>
+<% } else if (cache && cache.publicado && !error) { %>
 <div class="msg warning">No hay datos de liquidación para <%= mesLabel %>.</div>
 <% } %>
 <%- include('footer') %>
