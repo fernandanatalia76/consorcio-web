@@ -127,36 +127,73 @@ app.post('/registrar', async function (req, res) {
 app.get('/logout', function (req, res) { req.session.destroy(function () { res.redirect('/login'); }); });
 
 // ==================== CONSORCISTA ====================
+async function cargarLiquidacionDesdeSheets() {
+  var di = await sheets.leerDatosInicio();
+  var ma = getMesActivo(di);
+  var liq = await sheets.leerLiquidacionMasReciente(ma.mesGasNum, ma.mesGasAnio);
+  return {
+    liq: liq,
+    mesLabel: liq.mesLabel,
+    dia1: di['Día 1er vencimiento'] || '6',
+    dia2: di['Día 2do vencimiento'] || '13',
+    mesVenc: ma.mesNum,
+    anioVenc: ma.anio,
+    error: liq.error || null
+  };
+}
+
 app.get('/mi-liquidacion', requireLogin, async function (req, res) {
-  try {
-    var di = await sheets.leerDatosInicio();
-    var ma = getMesActivo(di);
-    var liq = await sheets.leerLiquidacionMasReciente(ma.mesGasNum, ma.mesGasAnio);
-    // Todas las UF del usuario (por CUIT, si tiene mas de una)
-    var misUfs = req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf, tipo: req.session.usuario.tipo || 'propietario' }];
-    // Para cada una, buscamos el dato en la liquidacion
-    var datos = misUfs.map(function (u) {
-      var dato = liq.datos.find(function (d) { return d.uf === u.uf; });
-      return { uf: u.uf, tipo: u.tipo, dato: dato };
+  var esAdmin = req.session.usuario.rol === 'admin';
+  var misUfs = req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf, tipo: req.session.usuario.tipo || 'propietario' }];
+  if (!cacheLiq.publicado) {
+    return res.render('liquidacion', {
+      datos: [], mesLabel: '', error: null,
+      dia1: '', dia2: '', mesVenc: '', anioVenc: '',
+      cache: { publicado: false, fechaHora: null, esAdmin: esAdmin }
     });
-    res.render('liquidacion', {
-      datos: datos, mesLabel: liq.mesLabel, error: liq.error || null,
-      dia1: di['Día 1er vencimiento'] || '6',
-      dia2: di['Día 2do vencimiento'] || '13',
-      mesVenc: ma.mesNum, anioVenc: ma.anio
-    });
-  } catch (e) { res.render('liquidacion', { datos: [], mesLabel: '', error: e.message, dia1: '', dia2: '', mesVenc: '', anioVenc: '' }); }
+  }
+  var c = cacheLiq.datos;
+  var datos = misUfs.map(function (u) {
+    var dato = c.liq.datos.find(function (d) { return d.uf === u.uf; });
+    return { uf: u.uf, tipo: u.tipo, dato: dato };
+  });
+  res.render('liquidacion', {
+    datos: datos, mesLabel: c.mesLabel, error: c.error,
+    dia1: c.dia1, dia2: c.dia2, mesVenc: c.mesVenc, anioVenc: c.anioVenc,
+    cache: { publicado: true, fechaHora: cacheLiq.fechaHora, esAdmin: esAdmin }
+  });
 });
 
 // Liquidacion completa (todas las UF) visible tambien para el consorcista
 app.get('/liquidacion-completa', requireLogin, async function (req, res) {
+  var esAdmin = req.session.usuario.rol === 'admin';
+  var misUfs = (req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf }]).map(function (u) { return u.uf; });
+  if (!cacheLiq.publicado) {
+    return res.render('admin-liquidacion', {
+      liq: { datos: [] }, mesLabel: '', error: null, misUfs: misUfs,
+      cache: { publicado: false, fechaHora: null, esAdmin: esAdmin }
+    });
+  }
+  var c = cacheLiq.datos;
+  res.render('admin-liquidacion', {
+    liq: c.liq, mesLabel: c.mesLabel, error: c.error, misUfs: misUfs,
+    cache: { publicado: true, fechaHora: cacheLiq.fechaHora, esAdmin: esAdmin }
+  });
+});
+
+// Solo admin: fuerza recarga de liquidacion.
+app.post('/admin/liquidacion/actualizar', requireAdmin, async function (req, res) {
   try {
-    var di = await sheets.leerDatosInicio();
-    var ma = getMesActivo(di);
-    var liq = await sheets.leerLiquidacionMasReciente(ma.mesGasNum, ma.mesGasAnio);
-    var misUfs = (req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf }]).map(function (u) { return u.uf; });
-    res.render('admin-liquidacion', { liq: liq, mesLabel: liq.mesLabel, error: liq.error || null, misUfs: misUfs });
-  } catch (e) { res.render('admin-liquidacion', { liq: { datos: [] }, mesLabel: '', error: e.message, misUfs: [] }); }
+    var d = await cargarLiquidacionDesdeSheets();
+    cacheLiq.publicado = true;
+    cacheLiq.fechaHora = new Date();
+    cacheLiq.quienActualizo = 'admin';
+    cacheLiq.datos = d;
+    req.session.flash = { tipo: 'aviso', texto: 'Liquidación actualizada.' };
+  } catch (e) {
+    req.session.flash = { tipo: 'aviso', texto: 'Error al actualizar: ' + e.message };
+  }
+  res.redirect(req.body.origen || '/mi-liquidacion');
 });
 
 app.get('/mis-pagos', requireLogin, async function (req, res) {
@@ -174,9 +211,18 @@ app.get('/mis-pagos', requireLogin, async function (req, res) {
 // Al arrancar el servidor esta vacia (los usuarios ven "sin datos publicados").
 var cacheGastos = {
   publicado: false,
-  fechaHora: null, // Date de la ultima actualizacion
+  fechaHora: null,
   quienActualizo: null,
-  datos: null      // { gastos, impuestos, cashflow, cashflowHistorico, mesLabel }
+  datos: null
+};
+
+// ==================== CACHE DE LIQUIDACION ====================
+// Misma logica: solo se refresca cuando el admin toca "Actualizar datos".
+var cacheLiq = {
+  publicado: false,
+  fechaHora: null,
+  quienActualizo: null,
+  datos: null // { liq, mesLabel, dia1, dia2, mesVenc, anioVenc }
 };
 
 async function cargarGastosDesdeSheets() {
@@ -325,13 +371,18 @@ app.post('/admin/test-email', requireAdmin, async function (req, res) {
   res.redirect('/admin?msg=' + encodeURIComponent(r.ok ? ('Email de prueba enviado a ' + destino) : ('Error al enviar: ' + r.error)));
 });
 
-app.get('/admin/liquidacion', requireAdmin, async function (req, res) {
-  try {
-    var di = await sheets.leerDatosInicio();
-    var ma = getMesActivo(di);
-    var liq = await sheets.leerLiquidacionMasReciente(ma.mesGasNum, ma.mesGasAnio);
-    res.render('admin-liquidacion', { liq: liq, mesLabel: liq.mesLabel, error: liq.error || null, misUfs: [] });
-  } catch (e) { res.render('admin-liquidacion', { liq: { datos: [] }, mesLabel: '', error: e.message, misUfs: [] }); }
+app.get('/admin/liquidacion', requireAdmin, function (req, res) {
+  if (!cacheLiq.publicado) {
+    return res.render('admin-liquidacion', {
+      liq: { datos: [] }, mesLabel: '', error: null, misUfs: [],
+      cache: { publicado: false, fechaHora: null, esAdmin: true }
+    });
+  }
+  var c = cacheLiq.datos;
+  res.render('admin-liquidacion', {
+    liq: c.liq, mesLabel: c.mesLabel, error: c.error, misUfs: [],
+    cache: { publicado: true, fechaHora: cacheLiq.fechaHora, esAdmin: true }
+  });
 });
 
 app.listen(PORT, function () { console.log('Consorcio Web en puerto ' + PORT); });
