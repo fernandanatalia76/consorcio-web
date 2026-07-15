@@ -50,7 +50,12 @@
   %>
     <% if (datos.length > 1) { %>
     <h2 style="margin-top:<%= idx===0 ? '20px' : '32px' %>;color:#1a4a6e">
-      UF <%= item.uf %>
+      UF <%= item.uf %><%
+        var desc = [];
+        if (item.depto) desc.push(item.depto);
+        if (item.tipoUf) desc.push(item.tipoUf);
+        if (desc.length) {
+      %> <span style="font-weight:normal;color:#5f6368;font-size:15px">— <%= desc.join(' · ') %></span><% } %>
       <span class="chip-tipo <%= tipoLabel %>" style="font-size:11px;vertical-align:middle"><%= tipoLabel %></span>
     </h2>
     <% } %>
