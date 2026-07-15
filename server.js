@@ -153,9 +153,16 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
     });
   }
   var c = cacheLiq.datos;
+  // Info descriptiva de cada UF (depto + tipoUf) desde solapa UF.
+  var ufsInfo = {};
+  try {
+    var ufsSheet = await sheets.leerUFs();
+    ufsSheet.forEach(function (u) { ufsInfo[u.uf] = { depto: u.depto, tipoUf: u.tipo }; });
+  } catch (e) { /* no bloquear */ }
   var datos = misUfs.map(function (u) {
     var dato = c.liq.datos.find(function (d) { return d.uf === u.uf; });
-    return { uf: u.uf, tipo: u.tipo, dato: dato };
+    var info = ufsInfo[u.uf] || {};
+    return { uf: u.uf, tipo: u.tipo, depto: info.depto || '', tipoUf: info.tipoUf || '', dato: dato };
   });
   res.render('liquidacion', {
     datos: datos, mesLabel: c.mesLabel, error: c.error,
