@@ -48,17 +48,6 @@
        var dato = item.dato;
        var tipoLabel = item.tipo === 'inquilino' ? 'inquilino' : 'propietario';
   %>
-    <% if (datos.length > 1) { %>
-    <h2 style="margin-top:<%= idx===0 ? '20px' : '32px' %>;color:#1a4a6e">
-      UF <%= item.uf %><%
-        var desc = [];
-        if (item.depto) desc.push(item.depto);
-        if (item.tipoUf) desc.push(item.tipoUf);
-        if (desc.length) {
-      %> <span style="font-weight:normal;color:#5f6368;font-size:15px">— <%= desc.join(' · ') %></span><% } %>
-      <span class="chip-tipo <%= tipoLabel %>" style="font-size:11px;vertical-align:middle"><%= tipoLabel %></span>
-    </h2>
-    <% } %>
 
     <% if (dato) {
          var deudaNum = toNum(dato.deuda);
@@ -75,48 +64,61 @@
       </div>
       <% } %>
 
-      <div class="card" style="overflow-x:auto">
-        <table class="tabla tabla-striped rtable">
-          <thead>
-            <tr>
-              <th>UF</th><th>Depto</th><th>Propietario</th><th>% Coef</th>
-              <th>Exp. Adeudadas</th><th>Pagos</th><th class="col-deuda">Deuda</th>
-              <th>Exp de Mes</th><th>Extraordinaria</th><th>Sum</th>
-              <th>Destapación</th><th>Bicis</th>
-              <th class="col-venc1">1er Venc</th><th class="col-venc2">2do Venc</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td data-label="UF"><strong><%= dato.uf %></strong></td>
-              <td data-label="Depto"><%= dato.depto %></td>
-              <td data-label="Propietario"><%= dato.propietario %></td>
-              <td data-label="% Coef"><%= dato.coef %></td>
-              <td data-label="Exp. Adeudadas">$<%= dato.expAdeudadas %></td>
-              <td data-label="Pagos">$<%= dato.pagos %></td>
-              <td data-label="Deuda" class="col-deuda"><strong>$<%= dato.deuda %></strong></td>
-              <td data-label="Exp de Mes">$<%= dato.expMes %></td>
-              <td data-label="Extraordinaria">$<%= dato.extraordinaria %></td>
-              <td data-label="Sum">$<%= dato.sum %></td>
-              <td data-label="Destapación">$<%= dato.destapacion %></td>
-              <td data-label="Bicis">$<%= dato.bicis %></td>
-              <td data-label="1er Venc" class="col-venc1"><strong>$<%= dato.venc1 %></strong></td>
-              <td data-label="2do Venc" class="col-venc2"><strong>$<%= dato.venc2 %></strong></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="grid-2" style="margin-top:16px">
-        <div class="card card-venc1">
-          <h3>📅 1er Vencimiento</h3>
-          <div class="venc-fecha"><%= dia1 %>/<%= mesVenc %>/<%= anioVenc %></div>
-          <div class="venc-monto">$<%= dato.venc1 %></div>
+      <div class="liq-card">
+        <div class="liq-head">
+          <div class="liq-titulo">
+            <span class="liq-uf">UF <%= item.uf %></span>
+            <% var desc = []; if (item.depto) desc.push(item.depto); if (item.tipoUf) desc.push(item.tipoUf); %>
+            <% if (desc.length) { %><span class="liq-desc"><%= desc.join(' · ') %></span><% } %>
+          </div>
+          <span class="chip-tipo <%= tipoLabel %>"><%= tipoLabel %></span>
         </div>
-        <div class="card card-venc2">
-          <h3>📅 2do Vencimiento (+3%)</h3>
-          <div class="venc-fecha"><%= dia2 %>/<%= mesVenc %>/<%= anioVenc %></div>
-          <div class="venc-monto">$<%= dato.venc2 %></div>
+
+        <div class="liq-vencs">
+          <div class="liq-venc">
+            <div class="liq-venc-lbl">1er vencimiento · <%= dia1 %>/<%= mesVenc %>/<%= anioVenc %></div>
+            <div class="liq-venc-monto liq-venc1">$<%= dato.venc1 %></div>
+          </div>
+          <div class="liq-venc-sep"></div>
+          <div class="liq-venc">
+            <div class="liq-venc-lbl">2do vencimiento (+3%) · <%= dia2 %>/<%= mesVenc %>/<%= anioVenc %></div>
+            <div class="liq-venc-monto liq-venc2">$<%= dato.venc2 %></div>
+          </div>
+        </div>
+
+        <div class="liq-detalle">
+          <div class="liq-det-item">
+            <div class="liq-det-lbl">Exp. mes anterior</div>
+            <div class="liq-det-val">$<%= dato.expAdeudadas %></div>
+          </div>
+          <div class="liq-det-item">
+            <div class="liq-det-lbl">Pagos</div>
+            <div class="liq-det-val">$<%= dato.pagos %></div>
+          </div>
+          <div class="liq-det-item liq-det-deuda">
+            <div class="liq-det-lbl">Deuda</div>
+            <div class="liq-det-val"<% if (toNum(dato.deuda) > 0) { %> style="color:#c5221f"<% } %>>$<%= dato.deuda %></div>
+          </div>
+          <div class="liq-det-item">
+            <div class="liq-det-lbl">Exp. mes</div>
+            <div class="liq-det-val">$<%= dato.expMes %></div>
+          </div>
+          <div class="liq-det-item">
+            <div class="liq-det-lbl">Extraord.</div>
+            <div class="liq-det-val">$<%= dato.extraordinaria %></div>
+          </div>
+          <% if (toNum(dato.destapacion) > 0) { %>
+          <div class="liq-det-item">
+            <div class="liq-det-lbl">Destapación</div>
+            <div class="liq-det-val">$<%= dato.destapacion %></div>
+          </div>
+          <% } %>
+          <% if (toNum(dato.bicis) > 0) { %>
+          <div class="liq-det-item">
+            <div class="liq-det-lbl">Bicis</div>
+            <div class="liq-det-val">$<%= dato.bicis %></div>
+          </div>
+          <% } %>
         </div>
       </div>
     <% } else { %>
