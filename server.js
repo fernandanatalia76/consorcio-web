@@ -131,11 +131,21 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
   try {
     var di = await sheets.leerDatosInicio();
     var ma = getMesActivo(di);
-    // Empezamos por el mes anterior al activo y retrocedemos hasta encontrar la solapa.
     var liq = await sheets.leerLiquidacionMasReciente(ma.mesGasNum, ma.mesGasAnio);
-    var dato = liq.datos.find(function (d) { return d.uf === req.session.usuario.uf; });
-    res.render('liquidacion', { dato: dato, mesLabel: liq.mesLabel, error: liq.error || null, dia1: di['Día 1er vencimiento'] || '6', dia2: di['Día 2do vencimiento'] || '13', mesVenc: ma.mesNum, anioVenc: ma.anio });
-  } catch (e) { res.render('liquidacion', { dato: null, mesLabel: '', error: e.message, dia1: '', dia2: '', mesVenc: '', anioVenc: '' }); }
+    // Todas las UF del usuario (por CUIT, si tiene mas de una)
+    var misUfs = req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf, tipo: req.session.usuario.tipo || 'propietario' }];
+    // Para cada una, buscamos el dato en la liquidacion
+    var datos = misUfs.map(function (u) {
+      var dato = liq.datos.find(function (d) { return d.uf === u.uf; });
+      return { uf: u.uf, tipo: u.tipo, dato: dato };
+    });
+    res.render('liquidacion', {
+      datos: datos, mesLabel: liq.mesLabel, error: liq.error || null,
+      dia1: di['Día 1er vencimiento'] || '6',
+      dia2: di['Día 2do vencimiento'] || '13',
+      mesVenc: ma.mesNum, anioVenc: ma.anio
+    });
+  } catch (e) { res.render('liquidacion', { datos: [], mesLabel: '', error: e.message, dia1: '', dia2: '', mesVenc: '', anioVenc: '' }); }
 });
 
 // Liquidacion completa (todas las UF) visible tambien para el consorcista
@@ -144,8 +154,9 @@ app.get('/liquidacion-completa', requireLogin, async function (req, res) {
     var di = await sheets.leerDatosInicio();
     var ma = getMesActivo(di);
     var liq = await sheets.leerLiquidacionMasReciente(ma.mesGasNum, ma.mesGasAnio);
-    res.render('admin-liquidacion', { liq: liq, mesLabel: liq.mesLabel, error: liq.error || null, miUf: req.session.usuario.uf });
-  } catch (e) { res.render('admin-liquidacion', { liq: { datos: [] }, mesLabel: '', error: e.message, miUf: req.session.usuario.uf }); }
+    var misUfs = (req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf }]).map(function (u) { return u.uf; });
+    res.render('admin-liquidacion', { liq: liq, mesLabel: liq.mesLabel, error: liq.error || null, misUfs: misUfs });
+  } catch (e) { res.render('admin-liquidacion', { liq: { datos: [] }, mesLabel: '', error: e.message, misUfs: [] }); }
 });
 
 app.get('/mis-pagos', requireLogin, async function (req, res) {
@@ -171,14 +182,18 @@ var cacheGastos = {
 async function cargarGastosDesdeSheets() {
   var di = await sheets.leerDatosInicio();
   var mg = getMesGastos(di);
-  var todosGastos = await sheets.leerGastos(mg.mesTxt);
+  // La solapa Gastos no tiene fecha ni filtro por mes: mostramos TODO lo que hay.
+  var todosGastos = await sheets.leerGastos(null);
   var gastos = [], impuestos = [];
   todosGastos.forEach(function (g) {
     if (String(g.proveedor || '').toLowerCase().indexOf('santander') !== -1) impuestos.push(g); else gastos.push(g);
   });
   var cfData = await sheets.leerCashFlow();
+  // El cashflow del mes activo (para el "Resumen" superior) se busca por nombre.
   var mesNorm = (mg.meses[mg.mesGasNum - 1] || '').toLowerCase();
   var cashflow = cfData.find(function (cf) { var t = String(cf.mes || '').toLowerCase(); return t.indexOf(mesNorm) !== -1 && t.indexOf(String(mg.mesGasAnio)) !== -1; }) || null;
+  // Si no hay cashflow para ese mes, tomamos el mas reciente que tenga datos.
+  if (!cashflow && cfData.length) cashflow = cfData[cfData.length - 1];
   var deudaProv = await sheets.leerDeudaProveedores();
   var totalGastos = await sheets.leerTotalGastos();
   if (cashflow) { cashflow.deudaProveedores = deudaProv; cashflow.totalGastos = totalGastos; cashflow.facturas = ''; }
@@ -315,8 +330,8 @@ app.get('/admin/liquidacion', requireAdmin, async function (req, res) {
     var di = await sheets.leerDatosInicio();
     var ma = getMesActivo(di);
     var liq = await sheets.leerLiquidacionMasReciente(ma.mesGasNum, ma.mesGasAnio);
-    res.render('admin-liquidacion', { liq: liq, mesLabel: liq.mesLabel, error: liq.error || null, miUf: null });
-  } catch (e) { res.render('admin-liquidacion', { liq: { datos: [] }, mesLabel: '', error: e.message, miUf: null }); }
+    res.render('admin-liquidacion', { liq: liq, mesLabel: liq.mesLabel, error: liq.error || null, misUfs: [] });
+  } catch (e) { res.render('admin-liquidacion', { liq: { datos: [] }, mesLabel: '', error: e.message, misUfs: [] }); }
 });
 
 app.listen(PORT, function () { console.log('Consorcio Web en puerto ' + PORT); });
