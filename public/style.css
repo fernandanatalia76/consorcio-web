@@ -103,10 +103,31 @@ h3{font-size:14px;margin-bottom:8px;color:#1a4a6e}
 .tipo-opt input{margin:0}
 .tipo-opt input:checked ~ *{color:#1a4a6e}
 .tipo-opt:has(input:checked){border-color:#1a4a6e;background:#e8f0fe}
-/* Chip de tipo en el panel de admin */
-.chip-tipo{display:inline-block;font-size:10px;font-weight:600;padding:1px 8px;border-radius:8px;margin-left:6px;text-transform:uppercase;letter-spacing:.3px}
-.chip-tipo.propietario{background:#e6f4ea;color:#137333}
 .chip-tipo.inquilino{background:#fef7e0;color:#e37400}
+
+/* Tarjeta de Mi Liquidacion (una por UF) */
+.liq-card{background:#fff;border-radius:12px;border:1px solid #dadce0;padding:16px 18px;margin:16px 0}
+.liq-card + .liq-card{margin-top:20px}
+.liq-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #dadce0}
+.liq-titulo{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.liq-uf{font-size:18px;font-weight:600;color:#1a4a6e}
+.liq-desc{font-size:13px;color:#5f6368}
+.liq-vencs{display:flex;gap:16px;align-items:center;margin-bottom:12px}
+.liq-venc{flex:1;min-width:0}
+.liq-venc-lbl{font-size:11px;color:#5f6368;margin-bottom:2px}
+.liq-venc-monto{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.liq-venc1{color:#137333}
+.liq-venc2{color:#e37400}
+.liq-venc-sep{width:1px;height:38px;background:#dadce0;flex-shrink:0}
+.liq-detalle{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-top:10px;border-top:1px solid #dadce0}
+.liq-det-item{min-width:0}
+.liq-det-lbl{font-size:11px;color:#5f6368}
+.liq-det-val{font-size:13px;font-weight:600;color:#1a1a2e;font-variant-numeric:tabular-nums}
+@media(max-width:640px){
+  .liq-vencs{flex-direction:column;align-items:stretch;gap:10px}
+  .liq-venc-sep{width:100%;height:1px}
+  .liq-detalle{grid-template-columns:repeat(2,1fr)}
+}
 
 /* Banner de "datos publicados" en Gastos */
 .cache-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:#e8f0fe;border-left:4px solid #1a4a6e;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px}
