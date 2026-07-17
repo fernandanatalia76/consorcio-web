@@ -192,10 +192,14 @@ app.get('/liquidacion-completa', requireLogin, async function (req, res) {
 app.post('/admin/liquidacion/actualizar', requireAdmin, async function (req, res) {
   try {
     var d = await cargarLiquidacionDesdeSheets();
+    var ahora = new Date();
     cacheLiq.publicado = true;
-    cacheLiq.fechaHora = new Date();
+    cacheLiq.fechaHora = ahora;
     cacheLiq.quienActualizo = 'admin';
     cacheLiq.datos = d;
+    // Guardar en la planilla para que sobreviva a reinicios de Render
+    try { await sheets.guardarCache('liquidacion', d, ahora); }
+    catch (e) { console.log('[CACHE] Aviso: liquidacion publicada pero no se guardo en planilla:', e.message); }
     req.session.flash = { tipo: 'aviso', texto: 'Liquidación actualizada.' };
   } catch (e) {
     req.session.flash = { tipo: 'aviso', texto: 'Error al actualizar: ' + e.message };
@@ -213,9 +217,9 @@ app.get('/mis-pagos', requireLogin, async function (req, res) {
 });
 
 // ==================== CACHE DE GASTOS ====================
-// Cache global compartida en memoria. Se actualiza solo cuando el admin
-// toca el boton "Actualizar datos" en la pagina Gastos.
-// Al arrancar el servidor esta vacia (los usuarios ven "sin datos publicados").
+// Cache global compartida en memoria + persistencia en solapa "Cache" de la
+// planilla. Al arrancar el servidor, se lee de la solapa (asi sobrevive a
+// reinicios de Render). Solo se actualiza cuando el admin toca el boton.
 var cacheGastos = {
   publicado: false,
   fechaHora: null,
@@ -224,13 +228,34 @@ var cacheGastos = {
 };
 
 // ==================== CACHE DE LIQUIDACION ====================
-// Misma logica: solo se refresca cuando el admin toca "Actualizar datos".
 var cacheLiq = {
   publicado: false,
   fechaHora: null,
   quienActualizo: null,
-  datos: null // { liq, mesLabel, dia1, dia2, mesVenc, anioVenc }
+  datos: null
 };
+
+// Al arrancar, intentamos cargar los datos publicados desde la planilla.
+(async function inicializarCaches() {
+  try {
+    var g = await sheets.leerCache('gastos');
+    if (g && g.datos) {
+      cacheGastos.publicado = true;
+      cacheGastos.fechaHora = g.fecha;
+      cacheGastos.datos = g.datos;
+      console.log('[CACHE] Gastos cargados desde planilla, publicados el', g.fecha);
+    }
+  } catch (e) { console.log('[CACHE] No se pudo restaurar gastos:', e.message); }
+  try {
+    var l = await sheets.leerCache('liquidacion');
+    if (l && l.datos) {
+      cacheLiq.publicado = true;
+      cacheLiq.fechaHora = l.fecha;
+      cacheLiq.datos = l.datos;
+      console.log('[CACHE] Liquidacion cargada desde planilla, publicada el', l.fecha);
+    }
+  } catch (e) { console.log('[CACHE] No se pudo restaurar liquidacion:', e.message); }
+})();
 
 async function cargarGastosDesdeSheets() {
   var di = await sheets.leerDatosInicio();
@@ -279,10 +304,14 @@ app.get('/gastos', requireLogin, async function (req, res) {
 app.post('/admin/gastos/actualizar', requireAdmin, async function (req, res) {
   try {
     var d = await cargarGastosDesdeSheets();
+    var ahora = new Date();
     cacheGastos.publicado = true;
-    cacheGastos.fechaHora = new Date();
+    cacheGastos.fechaHora = ahora;
     cacheGastos.quienActualizo = req.session.usuario.uf === 'admin' ? 'admin' : req.session.usuario.uf;
     cacheGastos.datos = d;
+    // Guardar en la planilla para que sobreviva a reinicios de Render
+    try { await sheets.guardarCache('gastos', d, ahora); }
+    catch (e) { console.log('[CACHE] Aviso: gastos publicados pero no se guardaron en planilla:', e.message); }
     req.session.flash = { tipo: 'aviso', texto: 'Datos de Gastos actualizados.' };
   } catch (e) {
     req.session.flash = { tipo: 'aviso', texto: 'Error al actualizar: ' + e.message };
