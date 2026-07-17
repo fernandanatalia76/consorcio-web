@@ -75,9 +75,15 @@
         </div>
 
         <div class="liq-total-box">
-          <div class="liq-total-lbl">Total a pagar hasta <%= dia1 %>/<%= mesVenc %>/<%= anioVenc %></div>
-          <div class="liq-total-monto">$<%= dato.venc1 %></div>
-          <div class="liq-total-recargo">Con recargo hasta <%= dia2 %>/<%= mesVenc %>: <span>$<%= dato.venc2 %></span></div>
+          <div class="liq-total-venc">
+            <div class="liq-total-lbl">Total a pagar hasta <%= dia1 %>/<%= mesVenc %>/<%= anioVenc %></div>
+            <div class="liq-total-monto verde">$<%= dato.venc1 %></div>
+          </div>
+          <div class="liq-total-sep"></div>
+          <div class="liq-total-venc">
+            <div class="liq-total-lbl">Con recargo hasta <%= dia2 %>/<%= mesVenc %></div>
+            <div class="liq-total-monto naranja">$<%= dato.venc2 %></div>
+          </div>
         </div>
 
         <div class="liq-detalle">
