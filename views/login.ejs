@@ -1,11 +1,16 @@
 <%- include('header') %>
 <div class="auth-card">
-  <h1>🏢 Consorcio</h1>
+  <h1>Consorcio Pueyrredón 1359</h1>
   <h2>Iniciar sesión</h2>
   <% if (error) { %><div class="msg error"><%= error %></div><% } %>
   <form method="POST" action="/login">
     <label>N° de Unidad Funcional</label>
     <input type="text" name="uf" placeholder="Ej: 10" required>
+    <label>Soy</label>
+    <div class="tipo-radios">
+      <label class="tipo-opt"><input type="radio" name="tipo" value="propietario" checked> Propietario</label>
+      <label class="tipo-opt"><input type="radio" name="tipo" value="inquilino"> Inquilino</label>
+    </div>
     <label>Contraseña</label>
     <input type="password" name="password" required>
     <button type="submit" class="btn btn-primary">Ingresar</button>
