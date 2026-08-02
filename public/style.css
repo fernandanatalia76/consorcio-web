@@ -51,6 +51,9 @@ h3{font-size:14px;margin-bottom:8px;color:#1A1035}
 .nota{font-size:11px;color:#5F5E5A;margin-top:8px}
 .deuda-box{margin-top:12px;padding:10px;background:#fff3e0;border-radius:6px;text-align:center}
 .auth-card{max-width:400px;margin:40px auto;background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 12px rgba(26,16,53,.12);text-align:center}
+.login-logo{display:flex;align-items:center;justify-content:center;gap:12px;margin:32px auto 0}
+.login-logo-text{font-size:26px;font-weight:700;color:#1A1035}
+.login-logo-it{color:#5A4A9E}
 .auth-card h1{font-size:26px;margin-bottom:4px;color:#1A1035}
 .auth-card h2{color:#5F5E5A;font-weight:400;margin-bottom:20px;font-size:16px}
 .auth-card form{text-align:left}
