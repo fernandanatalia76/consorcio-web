@@ -1,0 +1,21 @@
+<%- include('header') %>
+<h1>Importar PDF de Liquidación</h1>
+<% if (error) { %><div class="msg error"><%= error %></div><% } %>
+<% if (ok) { %>
+  <div class="msg ok">✅ Se importaron <%= filas %> UFs correctamente. Ya se publicaron en "Mi Liquidación".</div>
+<% } %>
+<div class="card" style="max-width:500px">
+  <form method="POST" action="/admin/liquidacion/importar-pdf" enctype="multipart/form-data">
+    <p>Subí el PDF de liquidación (el que exporta "Exportar PDFs" desde la planilla).</p>
+    <input type="file" name="pdf" accept="application/pdf" required style="margin:12px 0">
+    <br>
+    <button type="submit" class="btn btn-primary">📤 Importar y publicar</button>
+  </form>
+</div>
+<% if (textoCrudo) { %>
+  <div class="card" style="margin-top:20px">
+    <h3>Texto crudo extraído del PDF (para diagnóstico)</h3>
+    <pre style="white-space:pre-wrap;font-size:11px;max-height:400px;overflow-y:auto"><%= textoCrudo %></pre>
+  </div>
+<% } %>
+<%- include('footer') %>
