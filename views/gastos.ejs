@@ -92,8 +92,8 @@
           <div class="cf-item">
             <div class="cf-mes"><%= cf.mes %></div>
             <div class="cf-linea"><span>Saldo inicial</span><strong><%= money(cf.saldoInicial) %></strong></div>
-            <div class="cf-linea"><span>Depositado</span><strong class="cf-rojo"><%= money(cf.depositado) %></strong></div>
-            <div class="cf-linea"><span>Rescatado</span><strong class="cf-verde"><%= money(cf.rescatado) %></strong></div>
+            <div class="cf-linea"><span>Depositado</span><strong class="cf-verde"><%= money(cf.depositado) %></strong></div>
+            <div class="cf-linea"><span>Rescatado</span><strong class="cf-rojo"><%= money(cf.rescatado) %></strong></div>
             <div class="cf-linea cf-total"><span>Saldo final</span><strong><%= money(cf.saldoFinal) %></strong></div>
           </div>
         <% }); %>
@@ -135,7 +135,14 @@
     </div>
     <% } %>
     <%
-      function esExtra(g){ return String(g.categoria||'').toLowerCase().indexOf('extraordinari') !== -1; }
+      function esExtra(g){
+        var c = String(g.categoria||'').toLowerCase();
+        // FIX: "Ingreso extraordinarias" (fondos comunes de inversión)
+        // contiene la palabra "extraordinari" pero NO es un gasto
+        // extraordinario — es un débito real que va en Gastos ordinarios.
+        if (c.indexOf('ingreso extraordinar') !== -1) return false;
+        return c.indexOf('extraordinari') !== -1;
+      }
       var ordinarios = gastos.filter(function(g){ return !esExtra(g); });
       var extraordinarios = gastos.filter(esExtra);
     %>
@@ -154,6 +161,24 @@
         <% }); %>
       </tbody>
       <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th></th><th></th><th data-label="Gastos"><%= sumCol(ordinarios,'montoDebitado') %></th><th></th></tr></tfoot>
+      </table></div></div>
+    <% } %>
+    <% var recTrab = (typeof recaudacionTrabajos !== 'undefined' && recaudacionTrabajos) ? recaudacionTrabajos : []; %>
+    <% if (recTrab.length) { %>
+    <div class="card"><h3>Detalle recaudación para trabajos</h3><div style="overflow-x:auto">
+      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
+        <% recTrab.forEach(function(g) { %>
+        <tr>
+          <td data-label="Proveedor"><%= g.proveedor %></td>
+          <td data-label="N° Comprobante"><%= comp(g.nroComprobante) %></td>
+          <td data-label="Fecha"><%= g.fecha %></td>
+          <td data-label="Importe"><%= money(g.importe) %></td>
+          <td data-label="Gastos"><%= money(g.montoDebitado) %></td>
+          <td data-label="Estado"><span class="badge"><%= g.estado %></span></td>
+        </tr>
+        <% }); %>
+      </tbody>
+      <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th></th><th></th><th data-label="Gastos"><%= sumCol(recTrab,'montoDebitado') %></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
     <% if (extraordinarios.length) { %>
