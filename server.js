@@ -6,8 +6,9 @@ var authLib = require('./lib/auth');
 var sheets = require('./lib/sheets');
 var mailer = require('./lib/mailer');
 var multer = require('multer');
-var uploadPdf = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
-var pdfLiquidacion = require('./lib/pdfLiquidacion');
+var uploadArchivo = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
+var csvLiquidacion = require('./lib/csvLiquidacion');
+var textoLiquidacion = require('./lib/textoLiquidacion');
 var app = express();
 var PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
@@ -177,43 +178,82 @@ app.post('/admin/liquidacion/actualizar', requireAdmin, async function (req, res
   }
   res.redirect(req.body.origen || '/mi-liquidacion');
 });
-// ==================== IMPORTAR LIQUIDACION DESDE PDF ====================
-// Alternativa a leer directo de Sheets: el admin sube el PDF exportado
-// desde la solapa "Liquidacion <Mes> <Año>" y se parsea su contenido
-// para publicarlo igual que si viniera de la planilla.
-app.get('/admin/liquidacion/importar-pdf', requireAdmin, function (req, res) {
+// ==================== IMPORTAR LIQUIDACION DESDE CSV ====================
+// Alternativa a leer directo de Sheets: el admin sube el CSV exportado
+// desde la solapa "Liquidacion <Mes> <Año>" (Archivo > Descargar >
+// Valores separados por comas) y se publica igual que si viniera de la
+// planilla. A diferencia de un PDF, el CSV conserva las columnas
+// separadas de verdad, sin ambigüedad.
+app.get('/admin/liquidacion/importar-csv', requireAdmin, function (req, res) {
   res.render('admin-importar-liquidacion', { error: null, ok: false, filas: 0, textoCrudo: null });
 });
-app.post('/admin/liquidacion/importar-pdf', requireAdmin, uploadPdf.single('pdf'), async function (req, res) {
+app.post('/admin/liquidacion/importar-csv', requireAdmin, uploadArchivo.single('csv'), async function (req, res) {
   try {
     if (!req.file) {
-      return res.render('admin-importar-liquidacion', { error: 'No se subió ningún archivo.', ok: false, filas: 0, textoCrudo: null });
+      return res.render('admin-importar-liquidacion', { error: 'No se subió ningún archivo.', ok: false, filas: 0, textoCrudo: null, preview: null });
     }
-    var parsed = await pdfLiquidacion.parsearPdfLiquidacion(req.file.buffer);
+    var textoCSV = req.file.buffer.toString('utf8');
+    var parsed = csvLiquidacion.parsearCSVLiquidacion(textoCSV);
     if (!parsed.ok) {
-      return res.render('admin-importar-liquidacion', { error: parsed.error, ok: false, filas: 0, textoCrudo: parsed.textoCrudo || null });
+      return res.render('admin-importar-liquidacion', { error: parsed.error, ok: false, filas: 0, textoCrudo: parsed.textoCrudo || null, preview: null });
     }
-    var di = await sheets.leerDatosInicio();
-    var ma = getMesActivo(di);
-    var d = {
-      liq: { mesLabel: parsed.mesLabel || ma.mesGasLabel, nombre: '', datos: parsed.filas, error: null },
-      mesLabel: parsed.mesLabel || ma.mesGasLabel,
-      dia1: di['Día 1er vencimiento'] || '6',
-      dia2: di['Día 2do vencimiento'] || '13',
-      mesVenc: ma.mesNum,
-      anioVenc: ma.anio,
-      error: null
-    };
-    var ahora = new Date();
-    cacheLiq.publicado = true;
-    cacheLiq.fechaHora = ahora;
-    cacheLiq.quienActualizo = 'admin (PDF)';
-    cacheLiq.datos = d;
-    try { await sheets.guardarCache('liquidacion', d, ahora); }
-    catch (e) { console.log('[CACHE] Aviso: liquidacion (PDF) publicada pero no se guardo en planilla:', e.message); }
-    res.render('admin-importar-liquidacion', { error: null, ok: true, filas: parsed.filas.length, textoCrudo: null });
+    await publicarLiquidacion(parsed.filas, parsed.mesLabel, 'admin (CSV)');
+    res.render('admin-importar-liquidacion', { error: null, ok: true, filas: parsed.filas.length, textoCrudo: null, preview: null });
   } catch (e) {
-    res.render('admin-importar-liquidacion', { error: 'Error al procesar el PDF: ' + e.message, ok: false, filas: 0, textoCrudo: null });
+    res.render('admin-importar-liquidacion', { error: 'Error al procesar el CSV: ' + e.message, ok: false, filas: 0, textoCrudo: null, preview: null });
+  }
+});
+
+// Publica un array de filas de liquidación en la caché (misma estructura
+// que usa el resto del portal para mostrar "Mi Liquidación").
+async function publicarLiquidacion(filasLiq, mesLabelParsed, quien) {
+  var di = await sheets.leerDatosInicio();
+  var ma = getMesActivo(di);
+  var d = {
+    liq: { mesLabel: mesLabelParsed || ma.mesGasLabel, nombre: '', datos: filasLiq, error: null },
+    mesLabel: mesLabelParsed || ma.mesGasLabel,
+    dia1: di['Día 1er vencimiento'] || '6',
+    dia2: di['Día 2do vencimiento'] || '13',
+    mesVenc: ma.mesNum,
+    anioVenc: ma.anio,
+    error: null
+  };
+  var ahora = new Date();
+  cacheLiq.publicado = true;
+  cacheLiq.fechaHora = ahora;
+  cacheLiq.quienActualizo = quien;
+  cacheLiq.datos = d;
+  try { await sheets.guardarCache('liquidacion', d, ahora); }
+  catch (e) { console.log('[CACHE] Aviso: liquidacion publicada pero no se guardo en planilla:', e.message); }
+}
+
+// ==================== IMPORTAR LIQUIDACION PEGANDO TEXTO ====================
+// Para cuando el admin tiene el texto (ej. copiado de un Word) en vez de
+// un archivo CSV. Muestra una vista previa editable-por-revisión ANTES
+// de publicar, porque el parseo de texto es más propenso a ambigüedades
+// que un CSV real.
+app.get('/admin/liquidacion/importar-texto', requireAdmin, function (req, res) {
+  res.render('admin-importar-texto', { error: null, ok: false, preview: null, textoOriginal: '', mesLabel: null });
+});
+app.post('/admin/liquidacion/importar-texto/preview', requireAdmin, function (req, res) {
+  var texto = req.body.texto || '';
+  var parsed = textoLiquidacion.parsearTextoLiquidacion(texto);
+  if (!parsed.ok) {
+    return res.render('admin-importar-texto', { error: parsed.error, ok: false, preview: null, textoOriginal: texto, mesLabel: null });
+  }
+  res.render('admin-importar-texto', { error: null, ok: false, preview: parsed.filas, textoOriginal: texto, mesLabel: parsed.mesLabel });
+});
+app.post('/admin/liquidacion/importar-texto/confirmar', requireAdmin, async function (req, res) {
+  try {
+    var texto = req.body.texto || '';
+    var parsed = textoLiquidacion.parsearTextoLiquidacion(texto);
+    if (!parsed.ok) {
+      return res.render('admin-importar-texto', { error: parsed.error, ok: false, preview: null, textoOriginal: texto, mesLabel: null });
+    }
+    await publicarLiquidacion(parsed.filas, parsed.mesLabel, 'admin (texto)');
+    res.render('admin-importar-texto', { error: null, ok: true, preview: null, textoOriginal: '', mesLabel: null, filas: parsed.filas.length });
+  } catch (e) {
+    res.render('admin-importar-texto', { error: 'Error al publicar: ' + e.message, ok: false, preview: null, textoOriginal: req.body.texto || '', mesLabel: null });
   }
 });
 app.get('/mis-pagos', requireLogin, async function (req, res) {
