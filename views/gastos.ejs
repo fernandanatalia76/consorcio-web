@@ -40,6 +40,9 @@
       print-color-adjust: exact !important;
       color-adjust: exact !important;
     }
+    /* Sin esto, el navegador repite la fila TOTAL (tfoot) al pie de
+       CADA hoja impresa, no solo al final del detalle. */
+    tfoot { display: table-row-group; }
   }
 </style>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
@@ -232,11 +235,5 @@
     <% } %>
   </section>
 </div>
-<div class="pdf-footer" style="display:none">Powered by Flowit</div>
-<style>
-  @media print {
-    .pdf-footer { display:block !important; text-align:center; margin-top:24px; padding-top:12px; border-top:1px solid #ddd; font-size:11px; color:#5f5e5a; }
-  }
-</style>
 <% } %>
 <%- include('footer') %>
