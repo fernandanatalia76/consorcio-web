@@ -31,7 +31,6 @@
 %>
 <h1>Gastos y Saldos<% if (mesLabel) { %> — <%= mesLabel %><% } %></h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
-
 <% if (cache && cache.publicado) { %>
 <div class="cache-banner">
   <span class="cache-info">📅 Datos publicados el <strong><%= fmtFecha(cache.fechaHora) %></strong></span>
@@ -55,14 +54,18 @@
   <% } %>
 </div>
 <% } %>
-
 <% if (cache && cache.publicado) { %>
-
 <%
   var cfHist = (typeof cashflowHistorico !== 'undefined' && cashflowHistorico) ? cashflowHistorico : [];
+  var cfExtraHist = (typeof cashflowExtraHistorico !== 'undefined' && cashflowExtraHistorico) ? cashflowExtraHistorico : [];
 %>
+<style>
+  .cf-sidebar{display:flex;flex-direction:column}
+  .cf-historico-inversiones{border-top:3px solid #1a4a6e}
+</style>
 <div class="gastos-grid">
-  <aside class="card cf-historico">
+  <aside class="cf-sidebar">
+  <div class="card cf-historico">
     <h3>Cash Flow — histórico</h3>
     <% if (cfHist.length) { %>
       <div class="cf-lista">
@@ -79,8 +82,27 @@
     <% } else { %>
       <p class="nota">Sin datos de Cash Flow.</p>
     <% } %>
+  </div>
+  <div class="card cf-historico cf-historico-inversiones" style="margin-top:16px">
+    <h3>Cash Flow Inversiones — histórico</h3>
+    <p class="nota" style="margin-top:-6px;margin-bottom:10px">Fondos comunes de inversión (obras extraordinarias)</p>
+    <% if (cfExtraHist.length) { %>
+      <div class="cf-lista">
+        <% cfExtraHist.slice().reverse().forEach(function(cf){ %>
+          <div class="cf-item">
+            <div class="cf-mes"><%= cf.mes %></div>
+            <div class="cf-linea"><span>Saldo inicial</span><strong><%= money(cf.saldoInicial) %></strong></div>
+            <div class="cf-linea"><span>Depositado</span><strong class="cf-rojo"><%= money(cf.depositado) %></strong></div>
+            <div class="cf-linea"><span>Rescatado</span><strong class="cf-verde"><%= money(cf.rescatado) %></strong></div>
+            <div class="cf-linea cf-total"><span>Saldo final</span><strong><%= money(cf.saldoFinal) %></strong></div>
+          </div>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <p class="nota">Sin datos de inversiones todavía.</p>
+    <% } %>
+  </div>
   </aside>
-
   <section class="gastos-main">
     <% if (cashflow) { %>
     <div class="card resumen-card">
@@ -101,13 +123,22 @@
       <% } %>
     </div>
     <% } %>
-
+    <% if (typeof cashflowExtra !== 'undefined' && cashflowExtra) { %>
+    <div class="card resumen-card">
+      <h3>Resumen — Inversiones</h3>
+      <div class="resumen-grid">
+        <div class="resumen-item" style="background:#f1f3f4"><div class="resumen-label">Saldo inicial</div><div class="resumen-valor"><%= money(cashflowExtra.saldoInicial) %></div></div>
+        <div class="resumen-item" style="background:#e8f0fe"><div class="resumen-label">Depositado</div><div class="resumen-valor"><%= money(cashflowExtra.depositado) %></div></div>
+        <div class="resumen-item" style="background:#e6f4ea"><div class="resumen-label">Rescatado</div><div class="resumen-valor"><%= money(cashflowExtra.rescatado) %></div></div>
+        <div class="resumen-item" style="background:#e8f0fe"><div class="resumen-label">Saldo final</div><div class="resumen-valor"><%= money(cashflowExtra.saldoFinal) %></div></div>
+      </div>
+    </div>
+    <% } %>
     <%
       function esExtra(g){ return String(g.categoria||'').toLowerCase().indexOf('extraordinari') !== -1; }
       var ordinarios = gastos.filter(function(g){ return !esExtra(g); });
       var extraordinarios = gastos.filter(esExtra);
     %>
-
     <% if (ordinarios.length) { %>
     <div class="card"><h3>Detalle de facturas — Gastos ordinarios</h3><div style="overflow-x:auto">
       <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
@@ -125,7 +156,6 @@
       <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th></th><th></th><th data-label="Gastos"><%= sumCol(ordinarios,'montoDebitado') %></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
-
     <% if (extraordinarios.length) { %>
     <div class="card"><h3>Gastos extraordinarios</h3><div style="overflow-x:auto">
       <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Categoría</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
@@ -144,7 +174,6 @@
       <tfoot><tr class="fila-total"><th colspan="4">TOTAL</th><th data-label="Importe"><%= sumCol(extraordinarios,'importe') %></th><th data-label="Gastos"><%= sumCol(extraordinarios,'montoDebitado') %></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
-
     <% if (impuestos.length) { %>
     <div class="card"><h3>Impuestos y Comisiones bancarias</h3><div style="overflow-x:auto">
       <table class="tabla rtable"><thead><tr><th>Concepto</th><th>N° Comprobante</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
