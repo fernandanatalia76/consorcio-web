@@ -1,7 +1,13 @@
 <%- include('header') %>
+<% function money(v){
+  var n = Number(String(v==null?0:v).replace(/[^\d.,-]/g,'').replace(/\./g,'').replace(',','.')) || 0;
+  var neg = n < 0; n = Math.abs(n);
+  var partes = n.toFixed(2).split('.');
+  var entero = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (neg?'-':'') + '$' + entero + ',' + partes[1];
+} %>
 <h1>Liquidación Completa<% if (mesLabel) { %> — <%= mesLabel %><% } %></h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
-
 <% if (cache && cache.publicado) { %>
 <div class="cache-banner">
   <span class="cache-info">📅 Datos publicados el <strong><%= new Date(cache.fechaHora).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) %></strong></span>
@@ -27,13 +33,11 @@
   <% } %>
 </div>
 <% } %>
-
 <% if (cache && cache.publicado && typeof misUfs !== 'undefined' && misUfs && misUfs.length) { %>
 <div class="msg success" style="background:#e8f0fe;color:#1a4a6e">
   <% if (misUfs.length === 1) { %>Tu unidad (UF <%= misUfs[0] %>) aparece resaltada en la tabla.<% } else { %>Tus unidades (UF <%= misUfs.join(', UF ') %>) aparecen resaltadas en la tabla.<% } %>
 </div>
 <% } %>
-
 <% if (cache && cache.publicado && liq && liq.datos && liq.datos.length) { %>
 <div class="card" style="overflow-x:auto">
   <table class="tabla tabla-striped rtable">
@@ -53,16 +57,16 @@
         <td data-label="Depto"><%= d.depto %></td>
         <td data-label="Propietario"><%= d.propietario %></td>
         <td data-label="% Coef"><%= d.coef %></td>
-        <td data-label="Exp. Adeudadas">$<%= d.expAdeudadas %></td>
-        <td data-label="Pagos">$<%= d.pagos %></td>
-        <td data-label="Deuda" class="col-deuda"><strong>$<%= d.deuda %></strong></td>
-        <td data-label="Exp de Mes">$<%= d.expMes %></td>
-        <td data-label="Extraordinaria">$<%= d.extraordinaria %></td>
-        <td data-label="Sum">$<%= d.sum %></td>
-        <td data-label="Destapación">$<%= d.destapacion %></td>
-        <td data-label="Bicis">$<%= d.bicis %></td>
-        <td data-label="1er Venc" class="col-venc1"><strong>$<%= d.venc1 %></strong></td>
-        <td data-label="2do Venc" class="col-venc2"><strong>$<%= d.venc2 %></strong></td>
+        <td data-label="Exp. Adeudadas"><%= money(d.expAdeudadas) %></td>
+        <td data-label="Pagos"><%= money(d.pagos) %></td>
+        <td data-label="Deuda" class="col-deuda"><strong><%= money(d.deuda) %></strong></td>
+        <td data-label="Exp de Mes"><%= money(d.expMes) %></td>
+        <td data-label="Extraordinaria"><%= money(d.extraordinaria) %></td>
+        <td data-label="Sum"><%= money(d.sum) %></td>
+        <td data-label="Destapación"><%= money(d.destapacion) %></td>
+        <td data-label="Bicis"><%= money(d.bicis) %></td>
+        <td data-label="1er Venc" class="col-venc1"><strong><%= money(d.venc1) %></strong></td>
+        <td data-label="2do Venc" class="col-venc2"><strong><%= money(d.venc2) %></strong></td>
       </tr>
       <% }); %>
     </tbody>
