@@ -1,0 +1,50 @@
+<%- include('header') %>
+<h1>Importar Liquidación desde Word (.docx)</h1>
+<% function money(v){ return '$'+Number(v||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}); } %>
+<% if (error) { %><div class="msg error"><%= error %></div><% } %>
+<% if (ok) { %>
+  <div class="msg ok">✅ Se publicaron <%= filas %> UFs correctamente en "Mi Liquidación".</div>
+<% } %>
+
+<% if (!preview) { %>
+<div class="card" style="max-width:560px">
+  <p>Subí el archivo <strong>.docx</strong> de Word con la tabla de liquidación. Esta es la opción más confiable: un Word conserva la tabla real, sin ambigüedad.</p>
+  <form method="POST" action="/admin/liquidacion/importar-word" enctype="multipart/form-data" style="margin-top:16px">
+    <input type="file" name="word" accept=".docx" required style="margin:12px 0">
+    <br>
+    <button type="submit" class="btn btn-primary">📤 Subir y ver vista previa</button>
+  </form>
+</div>
+<% } else { %>
+<div class="msg ok">Se interpretaron <strong><%= preview.length %></strong> UFs<% if (mesLabel) { %> para <strong><%= mesLabel %></strong><% } %>. Revisá antes de confirmar.</div>
+<div class="card">
+  <div style="overflow-x:auto">
+  <table class="tabla tabla-striped rtable">
+    <thead><tr><th>UF</th><th>Depto</th><th>Propietario</th><th>Coef</th><th>Deuda</th><th>Exp Mes</th><th>Extraord.</th><th>Sum</th><th>1er Venc</th><th>2do Venc</th></tr></thead>
+    <tbody>
+      <% preview.forEach(function(f){ %>
+      <tr>
+        <td><%= f.uf %></td>
+        <td><%= f.depto %></td>
+        <td><%= f.propietario %></td>
+        <td><%= f.coef %>%</td>
+        <td><%= money(f.deuda) %></td>
+        <td><%= money(f.expMes) %></td>
+        <td><%= money(f.extraordinaria) %></td>
+        <td><%= money(f.sum) %></td>
+        <td><strong><%= money(f.venc1) %></strong></td>
+        <td><strong><%= money(f.venc2) %></strong></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  </div>
+</div>
+<div class="card" style="max-width:560px">
+  <form method="POST" action="/admin/liquidacion/importar-word/confirmar">
+    <button type="submit" class="btn btn-primary">✅ Confirmar y publicar</button>
+    <a href="/admin/liquidacion/importar-word" class="btn btn-sm" style="margin-left:8px;text-decoration:none">✏️ Subir otro archivo</a>
+  </form>
+</div>
+<% } %>
+<%- include('footer') %>
