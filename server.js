@@ -5,6 +5,9 @@ var path = require('path');
 var authLib = require('./lib/auth');
 var sheets = require('./lib/sheets');
 var mailer = require('./lib/mailer');
+var multer = require('multer');
+var uploadPdf = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
+var pdfLiquidacion = require('./lib/pdfLiquidacion');
 var app = express();
 var PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
@@ -173,6 +176,45 @@ app.post('/admin/liquidacion/actualizar', requireAdmin, async function (req, res
     req.session.flash = { tipo: 'aviso', texto: 'Error al actualizar: ' + e.message };
   }
   res.redirect(req.body.origen || '/mi-liquidacion');
+});
+// ==================== IMPORTAR LIQUIDACION DESDE PDF ====================
+// Alternativa a leer directo de Sheets: el admin sube el PDF exportado
+// desde la solapa "Liquidacion <Mes> <Año>" y se parsea su contenido
+// para publicarlo igual que si viniera de la planilla.
+app.get('/admin/liquidacion/importar-pdf', requireAdmin, function (req, res) {
+  res.render('admin-importar-liquidacion', { error: null, ok: false, filas: 0, textoCrudo: null });
+});
+app.post('/admin/liquidacion/importar-pdf', requireAdmin, uploadPdf.single('pdf'), async function (req, res) {
+  try {
+    if (!req.file) {
+      return res.render('admin-importar-liquidacion', { error: 'No se subió ningún archivo.', ok: false, filas: 0, textoCrudo: null });
+    }
+    var parsed = await pdfLiquidacion.parsearPdfLiquidacion(req.file.buffer);
+    if (!parsed.ok) {
+      return res.render('admin-importar-liquidacion', { error: parsed.error, ok: false, filas: 0, textoCrudo: parsed.textoCrudo || null });
+    }
+    var di = await sheets.leerDatosInicio();
+    var ma = getMesActivo(di);
+    var d = {
+      liq: { mesLabel: parsed.mesLabel || ma.mesGasLabel, nombre: '', datos: parsed.filas, error: null },
+      mesLabel: parsed.mesLabel || ma.mesGasLabel,
+      dia1: di['Día 1er vencimiento'] || '6',
+      dia2: di['Día 2do vencimiento'] || '13',
+      mesVenc: ma.mesNum,
+      anioVenc: ma.anio,
+      error: null
+    };
+    var ahora = new Date();
+    cacheLiq.publicado = true;
+    cacheLiq.fechaHora = ahora;
+    cacheLiq.quienActualizo = 'admin (PDF)';
+    cacheLiq.datos = d;
+    try { await sheets.guardarCache('liquidacion', d, ahora); }
+    catch (e) { console.log('[CACHE] Aviso: liquidacion (PDF) publicada pero no se guardo en planilla:', e.message); }
+    res.render('admin-importar-liquidacion', { error: null, ok: true, filas: parsed.filas.length, textoCrudo: null });
+  } catch (e) {
+    res.render('admin-importar-liquidacion', { error: 'Error al procesar el PDF: ' + e.message, ok: false, filas: 0, textoCrudo: null });
+  }
 });
 app.get('/mis-pagos', requireLogin, async function (req, res) {
   try {
