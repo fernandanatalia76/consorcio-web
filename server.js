@@ -218,6 +218,8 @@ async function cargarGastosDesdeSheets() {
   var di = await sheets.leerDatosInicio();
   var mg = getMesGastos(di);
   var todosGastos = await sheets.leerGastos(null);
+  console.log('[GASTOS] Total filas leídas:', todosGastos.length);
+  console.log('[GASTOS] Primeras 3 filas crudas:', JSON.stringify(todosGastos.slice(0,3)));
   var gastos = [], impuestos = [];
   todosGastos.forEach(function (g) {
     if (String(g.proveedor || '').toLowerCase().indexOf('santander') !== -1) impuestos.push(g); else gastos.push(g);
@@ -235,8 +237,11 @@ async function cargarGastosDesdeSheets() {
   var cashflowExtra = null;
   try {
     cfExtraData = await sheets.leerCashFlowExtraordinarias();
+    console.log('[INVERSIONES] Filas leídas de "Cash Flow Extraordinarias":', cfExtraData.length, JSON.stringify(cfExtraData));
+    console.log('[INVERSIONES] Buscando mes:', mesNorm, mg.mesGasAnio);
     cashflowExtra = cfExtraData.find(function (cf) { var t = String(cf.mes || '').toLowerCase(); return t.indexOf(mesNorm) !== -1 && t.indexOf(String(mg.mesGasAnio)) !== -1; }) || null;
     if (!cashflowExtra && cfExtraData.length) cashflowExtra = cfExtraData[cfExtraData.length - 1];
+    console.log('[INVERSIONES] cashflowExtra resultante:', JSON.stringify(cashflowExtra));
   } catch (e) { console.log('[GASTOS] No se pudo leer Cash Flow Extraordinarias:', e.message); }
   return {
     gastos: gastos, impuestos: impuestos, cashflow: cashflow, cashflowHistorico: cfData,
