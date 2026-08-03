@@ -79,7 +79,6 @@
     }
   </script>
 <% } %>
-
 <div class="grid-2">
   <div class="card">
     <h3>Datos del Consorcio</h3>
@@ -108,7 +107,11 @@
     <% } else { %><p>Sin datos de Cash Flow.</p><% } %>
   </div>
 </div>
-
+<div class="card">
+  <h3>📤 Importar Liquidación desde PDF</h3>
+  <p class="nota">Subí el PDF de liquidación exportado desde la planilla para publicarlo directo en el portal, sin depender de la lectura de Google Sheets.</p>
+  <a href="/admin/liquidacion/importar-pdf" class="btn btn-sm" style="display:inline-block;margin-top:8px;text-decoration:none">📤 Importar PDF</a>
+</div>
 <div class="card">
   <h3>Usuarios pendientes de activación</h3>
   <% if (pendientes.length) { %>
@@ -142,7 +145,6 @@
   </div>
   <% } else { %><p>No hay solicitudes pendientes.</p><% } %>
 </div>
-
 <div class="card">
   <h3>Usuarios activos</h3>
   <% var activos = usuarios.filter(function(u){return u.activo;}); %>
@@ -184,7 +186,6 @@
   </div>
   <% } else { %><p>No hay usuarios activos.</p><% } %>
 </div>
-
 <div class="grid-2">
   <div class="card">
     <h3>🔐 Cambiar contraseña de admin</h3>
