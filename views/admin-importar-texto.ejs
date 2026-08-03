@@ -1,0 +1,51 @@
+<%- include('header') %>
+<h1>Importar Liquidación pegando texto</h1>
+<% function money(v){ return '$'+Number(v||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}); } %>
+<% if (error) { %><div class="msg error"><%= error %></div><% } %>
+<% if (ok) { %>
+  <div class="msg ok">✅ Se publicaron <%= filas %> UFs correctamente en "Mi Liquidación".</div>
+<% } %>
+
+<% if (!preview) { %>
+<div class="card" style="max-width:700px">
+  <p>Pegá acá el texto completo de la liquidación (por ejemplo, copiado de un Word). El sistema arma una vista previa para que la revises ANTES de publicar nada.</p>
+  <form method="POST" action="/admin/liquidacion/importar-texto/preview">
+    <textarea name="texto" rows="16" style="width:100%;font-family:monospace;font-size:12px" required><%= textoOriginal %></textarea>
+    <br><br>
+    <button type="submit" class="btn btn-primary">👁️ Ver vista previa</button>
+  </form>
+</div>
+<% } else { %>
+<div class="msg ok">Se interpretaron <strong><%= preview.length %></strong> UFs<% if (mesLabel) { %> para <strong><%= mesLabel %></strong><% } %>. Revisá los datos antes de confirmar — sobre todo los montos poco habituales.</div>
+<div class="card">
+  <div style="overflow-x:auto">
+  <table class="tabla tabla-striped rtable">
+    <thead><tr><th>UF</th><th>Depto</th><th>Propietario</th><th>Coef</th><th>Deuda</th><th>Exp Mes</th><th>Extraord.</th><th>Sum</th><th>1er Venc</th><th>2do Venc</th></tr></thead>
+    <tbody>
+      <% preview.forEach(function(f){ %>
+      <tr>
+        <td><%= f.uf %></td>
+        <td><%= f.depto %></td>
+        <td><%= f.propietario %></td>
+        <td><%= f.coef %>%</td>
+        <td><%= money(f.deuda) %></td>
+        <td><%= money(f.expMes) %></td>
+        <td><%= money(f.extraordinaria) %></td>
+        <td><%= money(f.sum) %></td>
+        <td><strong><%= money(f.venc1) %></strong></td>
+        <td><strong><%= money(f.venc2) %></strong></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  </div>
+</div>
+<div class="card" style="max-width:700px">
+  <form method="POST" action="/admin/liquidacion/importar-texto/confirmar">
+    <textarea name="texto" style="display:none"><%= textoOriginal %></textarea>
+    <button type="submit" class="btn btn-primary">✅ Confirmar y publicar</button>
+    <a href="/admin/liquidacion/importar-texto" class="btn btn-sm" style="margin-left:8px;text-decoration:none">✏️ Volver a editar el texto</a>
+  </form>
+</div>
+<% } %>
+<%- include('footer') %>
