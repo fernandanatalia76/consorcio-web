@@ -13,10 +13,16 @@
     }
     var n = parseFloat(s); return isNaN(n) ? 0 : n;
   }
+  function money(v){
+    var n = toNum(v);
+    var neg = n < 0; n = Math.abs(n);
+    var partes = n.toFixed(2).split('.');
+    var entero = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return (neg?'-':'') + '$' + entero + ',' + partes[1];
+  }
 %>
 <h1>Mi Liquidación<% if (mesLabel) { %> — <%= mesLabel %><% } %></h1>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
-
 <% if (cache && cache.publicado) { %>
 <div class="cache-banner">
   <span class="cache-info">📅 Datos publicados el <strong><%= new Date(cache.fechaHora).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) %></strong></span>
@@ -42,13 +48,11 @@
   <% } %>
 </div>
 <% } %>
-
 <% if (cache && cache.publicado && datos && datos.length) { %>
   <% datos.forEach(function(item, idx) {
        var dato = item.dato;
        var tipoLabel = item.tipo === 'inquilino' ? 'inquilino' : 'propietario';
   %>
-
     <% if (dato) {
          var deudaNum = toNum(dato.deuda);
          var expMesNum = toNum(dato.expMes);
@@ -63,7 +67,6 @@
         </div>
       </div>
       <% } %>
-
       <div class="liq-card">
         <div class="liq-head">
           <div class="liq-titulo">
@@ -73,50 +76,48 @@
           </div>
           <span class="chip-tipo <%= tipoLabel %>"><%= tipoLabel %></span>
         </div>
-
         <div class="liq-total-box">
           <div class="liq-total-venc">
             <div class="liq-total-lbl">Total a pagar hasta <%= dia1 %>/<%= mesVenc %>/<%= anioVenc %></div>
-            <div class="liq-total-monto verde">$<%= dato.venc1 %></div>
+            <div class="liq-total-monto verde"><%= money(dato.venc1) %></div>
           </div>
           <div class="liq-total-sep"></div>
           <div class="liq-total-venc">
             <div class="liq-total-lbl">Con recargo hasta <%= dia2 %>/<%= mesVenc %></div>
-            <div class="liq-total-monto naranja">$<%= dato.venc2 %></div>
+            <div class="liq-total-monto naranja"><%= money(dato.venc2) %></div>
           </div>
         </div>
-
         <div class="liq-detalle">
           <div class="liq-det-item">
             <div class="liq-det-lbl">Exp. mes anterior</div>
-            <div class="liq-det-val">$<%= dato.expAdeudadas %></div>
+            <div class="liq-det-val"><%= money(dato.expAdeudadas) %></div>
           </div>
           <div class="liq-det-item">
             <div class="liq-det-lbl">Pagos</div>
-            <div class="liq-det-val">$<%= dato.pagos %></div>
+            <div class="liq-det-val"><%= money(dato.pagos) %></div>
           </div>
           <div class="liq-det-item liq-det-deuda">
             <div class="liq-det-lbl">Deuda</div>
-            <div class="liq-det-val">$<%= dato.deuda %></div>
+            <div class="liq-det-val"><%= money(dato.deuda) %></div>
           </div>
           <div class="liq-det-item">
             <div class="liq-det-lbl">Exp. mes</div>
-            <div class="liq-det-val">$<%= dato.expMes %></div>
+            <div class="liq-det-val"><%= money(dato.expMes) %></div>
           </div>
           <div class="liq-det-item">
             <div class="liq-det-lbl">Extraord.</div>
-            <div class="liq-det-val">$<%= dato.extraordinaria %></div>
+            <div class="liq-det-val"><%= money(dato.extraordinaria) %></div>
           </div>
           <% if (toNum(dato.destapacion) > 0) { %>
           <div class="liq-det-item">
             <div class="liq-det-lbl">Destapación</div>
-            <div class="liq-det-val">$<%= dato.destapacion %></div>
+            <div class="liq-det-val"><%= money(dato.destapacion) %></div>
           </div>
           <% } %>
           <% if (toNum(dato.bicis) > 0) { %>
           <div class="liq-det-item">
             <div class="liq-det-lbl">Bicis</div>
-            <div class="liq-det-val">$<%= dato.bicis %></div>
+            <div class="liq-det-val"><%= money(dato.bicis) %></div>
           </div>
           <% } %>
         </div>
