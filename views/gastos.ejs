@@ -31,9 +31,15 @@
 %>
 <h1>Gastos y Saldos<% if (mesLabel) { %> — <%= mesLabel %><% } %></h1>
 <style>
+  @page { size: landscape; margin: 12mm; }
   @media print {
     .cache-banner, .btn, form, .cf-sidebar { display: none !important; }
     .gastos-grid { display: block !important; }
+    *, *::before, *::after {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
   }
 </style>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
