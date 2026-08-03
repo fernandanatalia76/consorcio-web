@@ -220,8 +220,19 @@ async function cargarGastosDesdeSheets() {
   var todosGastos = await sheets.leerGastos(null);
   console.log('[GASTOS] Total filas leídas:', todosGastos.length);
   console.log('[GASTOS] Primeras 3 filas crudas:', JSON.stringify(todosGastos.slice(0,3)));
-  var gastos = [], impuestos = [];
+  var gastos = [], impuestos = [], recaudacionTrabajos = [];
   todosGastos.forEach(function (g) {
+    var cat = String(g.categoria || '').toLowerCase();
+    var est = String(g.estado || '').toLowerCase();
+    // FIX: "Adelanto..." (Estado empieza con "Adelanto") es un anticipo
+    // para trabajos futuros — va en su propia sección, no en Gastos
+    // ordinarios.
+    if (est.indexOf('adelanto') === 0) { recaudacionTrabajos.push(g); return; }
+    // FIX: "Ingreso extraordinarias" (fondos comunes de inversión) es un
+    // débito real de este mes — debe contar como Gastos ordinarios, aunque
+    // el proveedor tenga "Santander" en el nombre (que es el criterio que
+    // se usa acá para separar impuestos/comisiones bancarias).
+    if (cat.indexOf('ingreso extraordinar') !== -1) { gastos.push(g); return; }
     if (String(g.proveedor || '').toLowerCase().indexOf('santander') !== -1) impuestos.push(g); else gastos.push(g);
   });
   var cfData = await sheets.leerCashFlow();
@@ -244,7 +255,8 @@ async function cargarGastosDesdeSheets() {
     console.log('[INVERSIONES] cashflowExtra resultante:', JSON.stringify(cashflowExtra));
   } catch (e) { console.log('[GASTOS] No se pudo leer Cash Flow Extraordinarias:', e.message); }
   return {
-    gastos: gastos, impuestos: impuestos, cashflow: cashflow, cashflowHistorico: cfData,
+    gastos: gastos, impuestos: impuestos, recaudacionTrabajos: recaudacionTrabajos,
+    cashflow: cashflow, cashflowHistorico: cfData,
     cashflowExtra: cashflowExtra, cashflowExtraHistorico: cfExtraData,
     mesLabel: mg.mesLabel
   };
@@ -253,7 +265,7 @@ app.get('/gastos', requireLogin, async function (req, res) {
   var esAdmin = req.session.usuario.rol === 'admin';
   if (!cacheGastos.publicado) {
     return res.render('gastos', {
-      gastos: [], impuestos: [], cashflow: null, cashflowHistorico: [],
+      gastos: [], impuestos: [], recaudacionTrabajos: [], cashflow: null, cashflowHistorico: [],
       cashflowExtra: null, cashflowExtraHistorico: [],
       mesLabel: '', error: null,
       cache: { publicado: false, fechaHora: null, quienActualizo: null, esAdmin: esAdmin }
@@ -261,7 +273,8 @@ app.get('/gastos', requireLogin, async function (req, res) {
   }
   var d = cacheGastos.datos;
   res.render('gastos', {
-    gastos: d.gastos, impuestos: d.impuestos, cashflow: d.cashflow,
+    gastos: d.gastos, impuestos: d.impuestos, recaudacionTrabajos: d.recaudacionTrabajos || [],
+    cashflow: d.cashflow,
     cashflowHistorico: d.cashflowHistorico,
     cashflowExtra: d.cashflowExtra || null, cashflowExtraHistorico: d.cashflowExtraHistorico || [],
     mesLabel: d.mesLabel, error: null,
