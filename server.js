@@ -9,6 +9,7 @@ var multer = require('multer');
 var uploadArchivo = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 var csvLiquidacion = require('./lib/csvLiquidacion');
 var textoLiquidacion = require('./lib/textoLiquidacion');
+var wordLiquidacion = require('./lib/wordLiquidacion');
 var app = express();
 var PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
@@ -254,6 +255,42 @@ app.post('/admin/liquidacion/importar-texto/confirmar', requireAdmin, async func
     res.render('admin-importar-texto', { error: null, ok: true, preview: null, textoOriginal: '', mesLabel: null, filas: parsed.filas.length });
   } catch (e) {
     res.render('admin-importar-texto', { error: 'Error al publicar: ' + e.message, ok: false, preview: null, textoOriginal: req.body.texto || '', mesLabel: null });
+  }
+});
+// ==================== IMPORTAR LIQUIDACION DESDE WORD (.docx) ====================
+// La opción más confiable: un .docx conserva la tabla real (celdas
+// separadas de verdad), a diferencia de un PDF. Se sube el archivo, se
+// muestra una vista previa (guardada en la sesión) y recién al confirmar
+// se publica.
+app.get('/admin/liquidacion/importar-word', requireAdmin, function (req, res) {
+  res.render('admin-importar-word', { error: null, ok: false, preview: null, mesLabel: null, filas: 0 });
+});
+app.post('/admin/liquidacion/importar-word', requireAdmin, uploadArchivo.single('word'), async function (req, res) {
+  try {
+    if (!req.file) {
+      return res.render('admin-importar-word', { error: 'No se subió ningún archivo.', ok: false, preview: null, mesLabel: null, filas: 0 });
+    }
+    var parsed = await wordLiquidacion.parsearWordLiquidacion(req.file.buffer);
+    if (!parsed.ok) {
+      return res.render('admin-importar-word', { error: parsed.error, ok: false, preview: null, mesLabel: null, filas: 0 });
+    }
+    req.session.pendingLiqImport = { filas: parsed.filas, mesLabel: parsed.mesLabel };
+    res.render('admin-importar-word', { error: null, ok: false, preview: parsed.filas, mesLabel: parsed.mesLabel, filas: 0 });
+  } catch (e) {
+    res.render('admin-importar-word', { error: 'Error al procesar el Word: ' + e.message, ok: false, preview: null, mesLabel: null, filas: 0 });
+  }
+});
+app.post('/admin/liquidacion/importar-word/confirmar', requireAdmin, async function (req, res) {
+  try {
+    var pending = req.session.pendingLiqImport;
+    if (!pending || !pending.filas || !pending.filas.length) {
+      return res.render('admin-importar-word', { error: 'No hay una vista previa pendiente — subí el archivo de nuevo.', ok: false, preview: null, mesLabel: null, filas: 0 });
+    }
+    await publicarLiquidacion(pending.filas, pending.mesLabel, 'admin (Word)');
+    req.session.pendingLiqImport = null;
+    res.render('admin-importar-word', { error: null, ok: true, preview: null, mesLabel: null, filas: pending.filas.length });
+  } catch (e) {
+    res.render('admin-importar-word', { error: 'Error al publicar: ' + e.message, ok: false, preview: null, mesLabel: null, filas: 0 });
   }
 });
 app.get('/mis-pagos', requireLogin, async function (req, res) {
