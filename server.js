@@ -5,10 +5,8 @@ var path = require('path');
 var authLib = require('./lib/auth');
 var sheets = require('./lib/sheets');
 var mailer = require('./lib/mailer');
-
 var app = express();
 var PORT = process.env.PORT || 3000;
-
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -16,47 +14,32 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(session({ secret: process.env.SESSION_SECRET || 'dev-secret', resave: false, saveUninitialized: false }));
 app.use(function (req, res, next) { res.locals.usuario = req.session.usuario || null; next(); });
-
 function requireLogin(req, res, next) { if (!req.session.usuario) return res.redirect('/login'); next(); }
 function requireAdmin(req, res, next) { if (!req.session.usuario || req.session.usuario.rol !== 'admin') return res.redirect('/login'); next(); }
-
-// ---- Helpers de moneda / estado de pago ----
-// Convierte "$1.234,56" / "1.234,56" / "1234.56" a numero. Vacio -> 0.
 function parseMonto(v) {
   if (v === null || v === undefined) return 0;
   var s = String(v).replace(/[^\d.,-]/g, '');
   if (!s) return 0;
-  // Formato argentino: '.' = miles, ',' = decimales
   if (s.indexOf(',') !== -1) {
     s = s.replace(/\./g, '').replace(',', '.');
   }
   var n = parseFloat(s);
   return isNaN(n) ? 0 : n;
 }
-
-// Determina estado total / parcial / pendiente a partir de una fila de "Liquidacion final".
 function calcularEstado(row) {
   var cobrado = parseMonto(row.montoCobrado);
   var pendiente = parseMonto(row.montoPendiente);
   var aPagar = parseMonto(row.total1) || (cobrado + pendiente);
-  // Prioridad al texto explicito de la planilla si existe y es claro
   var txt = String(row.estado || '').toLowerCase();
   if (txt.indexOf('total') !== -1 || txt.indexOf('pagad') !== -1 || txt.indexOf('cancel') !== -1) {
     return { clave: 'total', label: 'Pagado' };
   }
   if (txt.indexOf('parcial') !== -1) return { clave: 'parcial', label: 'Parcial' };
   if (txt.indexOf('pendiente') !== -1 || txt.indexOf('impago') !== -1) return { clave: 'pendiente', label: 'Pendiente' };
-  // Sino, calculamos con los montos
   if (cobrado <= 0) return { clave: 'pendiente', label: 'Pendiente' };
   if (pendiente > 0.5 || (aPagar > 0 && cobrado + 0.5 < aPagar)) return { clave: 'parcial', label: 'Parcial' };
   return { clave: 'total', label: 'Pagado' };
 }
-
-// Helper del mes activo (viene de "Datos inicio" en formato AAAA-MM).
-// Se usa como base para las dos vistas:
-//   - Liquidacion: se muestra ESE mes (el activo).
-//   - Gastos / Cash Flow: se muestra el mes ANTERIOR al activo (son los gastos
-//     que se estan cobrando en este mes).
 function getMesActivo(di) {
   var p = String(di['Mes activo'] || '').split('-');
   var anio = parseInt(p[0]), mesNum = parseInt(p[1]);
@@ -64,25 +47,19 @@ function getMesActivo(di) {
   var mgAnio = (mesNum === 1) ? (anio - 1) : anio;
   var meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   return {
-    // Mes activo
     mesNum: mesNum, anio: anio,
     mesLabel: meses[mesNum - 1] + ' ' + anio,
     mesTxt: String(anio) + '-' + String(mesNum).padStart(2, '0'),
-    // Mes anterior (gastos)
     mesGasNum: mgNum, mesGasAnio: mgAnio,
     mesGasLabel: meses[mgNum - 1] + ' ' + mgAnio,
     mesGasTxt: String(mgAnio) + '-' + String(mgNum).padStart(2, '0'),
     meses: meses
   };
 }
-// Alias por compatibilidad con codigo antiguo (usaban mesGasNum/mesGasAnio/mesLabel como si fueran del mes anterior)
 function getMesGastos(di) {
   var a = getMesActivo(di);
-  // Para vistas de GASTOS, mesLabel debe ser el mes anterior.
   return Object.assign({}, a, { mesLabel: a.mesGasLabel, mesTxt: a.mesGasTxt });
 }
-
-// ==================== RUTAS PUBLICAS ====================
 app.get('/', function (req, res) { if (req.session.usuario) return res.redirect(req.session.usuario.rol === 'admin' ? '/admin' : '/mi-liquidacion'); res.redirect('/login'); });
 app.get('/login', function (req, res) { res.render('login', { error: null }); });
 app.post('/login', async function (req, res) {
@@ -125,8 +102,6 @@ app.post('/registrar', async function (req, res) {
   } catch (e) { res.render('registrar', { error: e.message, ok: false }); }
 });
 app.get('/logout', function (req, res) { req.session.destroy(function () { res.redirect('/login'); }); });
-
-// ==================== CONSORCISTA ====================
 async function cargarLiquidacionDesdeSheets() {
   var di = await sheets.leerDatosInicio();
   var ma = getMesActivo(di);
@@ -141,7 +116,6 @@ async function cargarLiquidacionDesdeSheets() {
     error: liq.error || null
   };
 }
-
 app.get('/mi-liquidacion', requireLogin, async function (req, res) {
   var esAdmin = req.session.usuario.rol === 'admin';
   var misUfs = req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf, tipo: req.session.usuario.tipo || 'propietario' }];
@@ -153,7 +127,6 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
     });
   }
   var c = cacheLiq.datos;
-  // Info descriptiva de cada UF (depto + tipoUf) desde solapa UF.
   var ufsInfo = {};
   try {
     var ufsSheet = await sheets.leerUFs();
@@ -170,8 +143,6 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
     cache: { publicado: true, fechaHora: cacheLiq.fechaHora, esAdmin: esAdmin }
   });
 });
-
-// Liquidacion completa (todas las UF) visible tambien para el consorcista
 app.get('/liquidacion-completa', requireLogin, async function (req, res) {
   var esAdmin = req.session.usuario.rol === 'admin';
   var misUfs = (req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf }]).map(function (u) { return u.uf; });
@@ -187,8 +158,6 @@ app.get('/liquidacion-completa', requireLogin, async function (req, res) {
     cache: { publicado: true, fechaHora: cacheLiq.fechaHora, esAdmin: esAdmin }
   });
 });
-
-// Solo admin: fuerza recarga de liquidacion.
 app.post('/admin/liquidacion/actualizar', requireAdmin, async function (req, res) {
   try {
     var d = await cargarLiquidacionDesdeSheets();
@@ -197,7 +166,6 @@ app.post('/admin/liquidacion/actualizar', requireAdmin, async function (req, res
     cacheLiq.fechaHora = ahora;
     cacheLiq.quienActualizo = 'admin';
     cacheLiq.datos = d;
-    // Guardar en la planilla para que sobreviva a reinicios de Render
     try { await sheets.guardarCache('liquidacion', d, ahora); }
     catch (e) { console.log('[CACHE] Aviso: liquidacion publicada pero no se guardo en planilla:', e.message); }
     req.session.flash = { tipo: 'aviso', texto: 'Liquidación actualizada.' };
@@ -206,7 +174,6 @@ app.post('/admin/liquidacion/actualizar', requireAdmin, async function (req, res
   }
   res.redirect(req.body.origen || '/mi-liquidacion');
 });
-
 app.get('/mis-pagos', requireLogin, async function (req, res) {
   try {
     var lf = await sheets.leerLiquidacionFinal();
@@ -215,27 +182,18 @@ app.get('/mis-pagos', requireLogin, async function (req, res) {
     res.render('historial', { pagos: mis, error: null });
   } catch (e) { res.render('historial', { pagos: [], error: e.message }); }
 });
-
-// ==================== CACHE DE GASTOS ====================
-// Cache global compartida en memoria + persistencia en solapa "Cache" de la
-// planilla. Al arrancar el servidor, se lee de la solapa (asi sobrevive a
-// reinicios de Render). Solo se actualiza cuando el admin toca el boton.
 var cacheGastos = {
   publicado: false,
   fechaHora: null,
   quienActualizo: null,
   datos: null
 };
-
-// ==================== CACHE DE LIQUIDACION ====================
 var cacheLiq = {
   publicado: false,
   fechaHora: null,
   quienActualizo: null,
   datos: null
 };
-
-// Al arrancar, intentamos cargar los datos publicados desde la planilla.
 (async function inicializarCaches() {
   try {
     var g = await sheets.leerCache('gastos');
@@ -256,33 +214,42 @@ var cacheLiq = {
     }
   } catch (e) { console.log('[CACHE] No se pudo restaurar liquidacion:', e.message); }
 })();
-
 async function cargarGastosDesdeSheets() {
   var di = await sheets.leerDatosInicio();
   var mg = getMesGastos(di);
-  // La solapa Gastos no tiene fecha ni filtro por mes: mostramos TODO lo que hay.
   var todosGastos = await sheets.leerGastos(null);
   var gastos = [], impuestos = [];
   todosGastos.forEach(function (g) {
     if (String(g.proveedor || '').toLowerCase().indexOf('santander') !== -1) impuestos.push(g); else gastos.push(g);
   });
   var cfData = await sheets.leerCashFlow();
-  // El cashflow del mes activo (para el "Resumen" superior) se busca por nombre.
   var mesNorm = (mg.meses[mg.mesGasNum - 1] || '').toLowerCase();
   var cashflow = cfData.find(function (cf) { var t = String(cf.mes || '').toLowerCase(); return t.indexOf(mesNorm) !== -1 && t.indexOf(String(mg.mesGasAnio)) !== -1; }) || null;
-  // Si no hay cashflow para ese mes, tomamos el mas reciente que tenga datos.
   if (!cashflow && cfData.length) cashflow = cfData[cfData.length - 1];
   var deudaProv = await sheets.leerDeudaProveedores();
   var totalGastos = await sheets.leerTotalGastos();
   if (cashflow) { cashflow.deudaProveedores = deudaProv; cashflow.totalGastos = totalGastos; cashflow.facturas = ''; }
-  return { gastos: gastos, impuestos: impuestos, cashflow: cashflow, cashflowHistorico: cfData, mesLabel: mg.mesLabel };
+  // Cash Flow de Inversiones/Fondos comunes (Extraordinarias) — mismo
+  // criterio de busqueda por mes que el Cash Flow normal.
+  var cfExtraData = [];
+  var cashflowExtra = null;
+  try {
+    cfExtraData = await sheets.leerCashFlowExtraordinarias();
+    cashflowExtra = cfExtraData.find(function (cf) { var t = String(cf.mes || '').toLowerCase(); return t.indexOf(mesNorm) !== -1 && t.indexOf(String(mg.mesGasAnio)) !== -1; }) || null;
+    if (!cashflowExtra && cfExtraData.length) cashflowExtra = cfExtraData[cfExtraData.length - 1];
+  } catch (e) { console.log('[GASTOS] No se pudo leer Cash Flow Extraordinarias:', e.message); }
+  return {
+    gastos: gastos, impuestos: impuestos, cashflow: cashflow, cashflowHistorico: cfData,
+    cashflowExtra: cashflowExtra, cashflowExtraHistorico: cfExtraData,
+    mesLabel: mg.mesLabel
+  };
 }
-
 app.get('/gastos', requireLogin, async function (req, res) {
   var esAdmin = req.session.usuario.rol === 'admin';
   if (!cacheGastos.publicado) {
     return res.render('gastos', {
       gastos: [], impuestos: [], cashflow: null, cashflowHistorico: [],
+      cashflowExtra: null, cashflowExtraHistorico: [],
       mesLabel: '', error: null,
       cache: { publicado: false, fechaHora: null, quienActualizo: null, esAdmin: esAdmin }
     });
@@ -290,7 +257,9 @@ app.get('/gastos', requireLogin, async function (req, res) {
   var d = cacheGastos.datos;
   res.render('gastos', {
     gastos: d.gastos, impuestos: d.impuestos, cashflow: d.cashflow,
-    cashflowHistorico: d.cashflowHistorico, mesLabel: d.mesLabel, error: null,
+    cashflowHistorico: d.cashflowHistorico,
+    cashflowExtra: d.cashflowExtra || null, cashflowExtraHistorico: d.cashflowExtraHistorico || [],
+    mesLabel: d.mesLabel, error: null,
     cache: {
       publicado: true,
       fechaHora: cacheGastos.fechaHora,
@@ -299,8 +268,6 @@ app.get('/gastos', requireLogin, async function (req, res) {
     }
   });
 });
-
-// Solo el admin puede forzar la actualizacion. Al terminar, redirige a /gastos.
 app.post('/admin/gastos/actualizar', requireAdmin, async function (req, res) {
   try {
     var d = await cargarGastosDesdeSheets();
@@ -309,7 +276,6 @@ app.post('/admin/gastos/actualizar', requireAdmin, async function (req, res) {
     cacheGastos.fechaHora = ahora;
     cacheGastos.quienActualizo = req.session.usuario.uf === 'admin' ? 'admin' : req.session.usuario.uf;
     cacheGastos.datos = d;
-    // Guardar en la planilla para que sobreviva a reinicios de Render
     try { await sheets.guardarCache('gastos', d, ahora); }
     catch (e) { console.log('[CACHE] Aviso: gastos publicados pero no se guardaron en planilla:', e.message); }
     req.session.flash = { tipo: 'aviso', texto: 'Datos de Gastos actualizados.' };
@@ -318,21 +284,17 @@ app.post('/admin/gastos/actualizar', requireAdmin, async function (req, res) {
   }
   res.redirect('/gastos');
 });
-
-// ==================== ADMIN ====================
 app.get('/admin', requireAdmin, async function (req, res) {
   try {
     var di = await sheets.leerDatosInicio();
     var cf = await sheets.leerCashFlow();
     var usuarios = await authLib.listarUsuarios();
     var pendientes = await authLib.listarPendientes();
-    // "flash": mensaje/credenciales que dura una sola vista
     var flash = req.session.flash || null;
     req.session.flash = null;
     res.render('admin-dashboard', { di: di, cashflow: cf, usuarios: usuarios, pendientes: pendientes, error: null, msg: req.query.msg || null, flash: flash });
   } catch (e) { res.render('admin-dashboard', { di: {}, cashflow: [], usuarios: [], pendientes: [], error: e.message, msg: null, flash: null }); }
 });
-
 app.post('/admin/activar', requireAdmin, async function (req, res) {
   var uf = req.body.uf, pw = req.body.password, tipo = req.body.tipo;
   var r = await authLib.activarUsuario(uf, pw, tipo);
@@ -352,7 +314,6 @@ app.post('/admin/activar', requireAdmin, async function (req, res) {
   req.session.flash = { tipo: 'credenciales', accion: 'activado', uf: uf, ufs: r.ufs || [uf], password: pw, tipoUsuario: r.tipo || tipo || 'propietario', mail: mailInfo };
   res.redirect('/admin');
 });
-
 app.post('/admin/desactivar', requireAdmin, async function (req, res) {
   var r = await authLib.desactivarUsuario(req.body.uf, req.body.tipo);
   var texto = (r.ok && r.ufs && r.ufs.length > 1)
@@ -361,7 +322,6 @@ app.post('/admin/desactivar', requireAdmin, async function (req, res) {
   req.session.flash = { tipo: 'aviso', texto: texto };
   res.redirect('/admin');
 });
-
 app.post('/admin/eliminar', requireAdmin, async function (req, res) {
   var r = await authLib.eliminarUsuario(req.body.uf, req.body.tipo);
   var texto;
@@ -371,7 +331,6 @@ app.post('/admin/eliminar', requireAdmin, async function (req, res) {
   req.session.flash = { tipo: 'aviso', texto: texto };
   res.redirect('/admin');
 });
-
 app.post('/admin/blanquear', requireAdmin, async function (req, res) {
   var uf = req.body.uf, pw = req.body.password, tipo = req.body.tipo;
   var r = await authLib.blanquearClave(uf, pw, tipo);
@@ -391,13 +350,10 @@ app.post('/admin/blanquear', requireAdmin, async function (req, res) {
   req.session.flash = { tipo: 'credenciales', accion: 'blanqueada', uf: uf, ufs: r.ufs || [uf], password: pw, tipoUsuario: r.tipo || tipo || 'propietario', mail: mailInfo };
   res.redirect('/admin');
 });
-
 app.post('/admin/cambiar-password', requireAdmin, async function (req, res) {
   var r = await authLib.cambiarPasswordAdmin(req.body.password);
   res.redirect('/admin?msg=' + encodeURIComponent(r.ok ? 'Contraseña de admin actualizada' : ('Error: ' + r.error)));
 });
-
-// Prueba de configuracion de email (item 3): verifica credenciales y manda un mail de prueba.
 app.post('/admin/test-email', requireAdmin, async function (req, res) {
   var v = await mailer.verificar();
   if (!v.ok) return res.redirect('/admin?msg=' + encodeURIComponent('Email NO configurado: ' + v.error));
@@ -406,7 +362,6 @@ app.post('/admin/test-email', requireAdmin, async function (req, res) {
     'Este es un email de prueba. Si lo recibiste, la configuración SMTP funciona correctamente.');
   res.redirect('/admin?msg=' + encodeURIComponent(r.ok ? ('Email de prueba enviado a ' + destino) : ('Error al enviar: ' + r.error)));
 });
-
 app.get('/admin/liquidacion', requireAdmin, function (req, res) {
   if (!cacheLiq.publicado) {
     return res.render('admin-liquidacion', {
@@ -420,5 +375,4 @@ app.get('/admin/liquidacion', requireAdmin, function (req, res) {
     cache: { publicado: true, fechaHora: cacheLiq.fechaHora, esAdmin: true }
   });
 });
-
 app.listen(PORT, function () { console.log('Consorcio Web en puerto ' + PORT); });
