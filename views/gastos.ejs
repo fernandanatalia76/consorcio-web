@@ -30,7 +30,18 @@
   }
 %>
 <h1>Gastos y Saldos<% if (mesLabel) { %> — <%= mesLabel %><% } %></h1>
+<style>
+  @media print {
+    .cache-banner, .btn, form, .cf-sidebar { display: none !important; }
+    .gastos-grid { display: block !important; }
+  }
+</style>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
+<% if (cache && cache.publicado && cache.esAdmin) { %>
+<div style="text-align:right;margin-bottom:10px">
+  <button type="button" class="btn btn-sm" onclick="window.print()">🖨️ Generar PDF</button>
+</div>
+<% } %>
 <% if (cache && cache.publicado) { %>
 <div class="cache-banner">
   <span class="cache-info">📅 Datos publicados el <strong><%= fmtFecha(cache.fechaHora) %></strong></span>
@@ -104,23 +115,35 @@
   </div>
   </aside>
   <section class="gastos-main">
+    <%
+      function esExtra(g){
+        var c = String(g.categoria||'').toLowerCase();
+        // FIX: "Ingreso extraordinarias" (fondos comunes de inversión)
+        // contiene la palabra "extraordinari" pero NO es un gasto
+        // extraordinario — es un débito real que va en Gastos ordinarios.
+        if (c.indexOf('ingreso extraordinar') !== -1) return false;
+        return c.indexOf('extraordinari') !== -1;
+      }
+      var ordinarios = gastos.filter(function(g){ return !esExtra(g); });
+      var extraordinarios = gastos.filter(esExtra);
+      var recTrab = (typeof recaudacionTrabajos !== 'undefined' && recaudacionTrabajos) ? recaudacionTrabajos : [];
+      // FIX: "Total débitos" del resumen ahora es Gastos ordinarios +
+      // Impuestos y Comisiones bancarias (lo que realmente se ve abajo en
+      // el detalle), en vez del dato de la solapa Cash Flow que podía no
+      // coincidir.
+      var totDebOrdinarios = 0; ordinarios.forEach(function(g){ totDebOrdinarios += toNum(g.montoDebitado); });
+      var totDebImpuestos  = 0; impuestos.forEach(function(g){ totDebImpuestos += toNum(g.montoDebitado); });
+      var totDebResumen = totDebOrdinarios + totDebImpuestos;
+    %>
     <% if (cashflow) { %>
     <div class="card resumen-card">
       <h3>Resumen — <%= mesLabel %></h3>
       <div class="resumen-grid">
         <div class="resumen-item" style="background:#f1f3f4"><div class="resumen-label">Saldo inicial</div><div class="resumen-valor"><%= money(cashflow.saldoInicial) %></div></div>
         <div class="resumen-item" style="background:#e6f4ea"><div class="resumen-label">Créditos cobrados</div><div class="resumen-valor"><%= money(cashflow.creditosCobrados) %></div></div>
-        <div class="resumen-item" style="background:#fce8e6"><div class="resumen-label">Total débitos</div><div class="resumen-valor"><%= money(cashflow.debitosProveedores) %></div></div>
+        <div class="resumen-item" style="background:#fce8e6"><div class="resumen-label">Total débitos</div><div class="resumen-valor">$<%= totDebResumen.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %></div></div>
         <div class="resumen-item" style="background:#e8f0fe"><div class="resumen-label">Saldo final</div><div class="resumen-valor"><%= money(cashflow.saldoFinal) %></div></div>
       </div>
-      <% var tieneDeuda = cashflow.deudaProveedores && cashflow.deudaProveedores !== '0' && cashflow.deudaProveedores !== '$0,00';
-         var tieneTotal = cashflow.totalGastos && cashflow.totalGastos !== '0' && cashflow.totalGastos !== '$0,00'; %>
-      <% if (tieneDeuda || tieneTotal) { %>
-      <div class="deuda-box">
-        <strong>Deuda a proveedores:</strong> <%= tieneDeuda ? money(cashflow.deudaProveedores) : '—' %>
-        <% if (tieneTotal) { %><span class="nota">(Total gastos: <%= money(cashflow.totalGastos) %>)</span><% } %>
-      </div>
-      <% } %>
     </div>
     <% } %>
     <% if (typeof cashflowExtra !== 'undefined' && cashflowExtra) { %>
@@ -134,18 +157,6 @@
       </div>
     </div>
     <% } %>
-    <%
-      function esExtra(g){
-        var c = String(g.categoria||'').toLowerCase();
-        // FIX: "Ingreso extraordinarias" (fondos comunes de inversión)
-        // contiene la palabra "extraordinari" pero NO es un gasto
-        // extraordinario — es un débito real que va en Gastos ordinarios.
-        if (c.indexOf('ingreso extraordinar') !== -1) return false;
-        return c.indexOf('extraordinari') !== -1;
-      }
-      var ordinarios = gastos.filter(function(g){ return !esExtra(g); });
-      var extraordinarios = gastos.filter(esExtra);
-    %>
     <% if (ordinarios.length) { %>
     <div class="card"><h3>Detalle de facturas — Gastos ordinarios</h3><div style="overflow-x:auto">
       <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
@@ -161,24 +172,6 @@
         <% }); %>
       </tbody>
       <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th></th><th></th><th data-label="Gastos"><%= sumCol(ordinarios,'montoDebitado') %></th><th></th></tr></tfoot>
-      </table></div></div>
-    <% } %>
-    <% var recTrab = (typeof recaudacionTrabajos !== 'undefined' && recaudacionTrabajos) ? recaudacionTrabajos : []; %>
-    <% if (recTrab.length) { %>
-    <div class="card"><h3>Detalle recaudación para trabajos</h3><div style="overflow-x:auto">
-      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
-        <% recTrab.forEach(function(g) { %>
-        <tr>
-          <td data-label="Proveedor"><%= g.proveedor %></td>
-          <td data-label="N° Comprobante"><%= comp(g.nroComprobante) %></td>
-          <td data-label="Fecha"><%= g.fecha %></td>
-          <td data-label="Importe"><%= money(g.importe) %></td>
-          <td data-label="Gastos"><%= money(g.montoDebitado) %></td>
-          <td data-label="Estado"><span class="badge"><%= g.estado %></span></td>
-        </tr>
-        <% }); %>
-      </tbody>
-      <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th></th><th></th><th data-label="Gastos"><%= sumCol(recTrab,'montoDebitado') %></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
     <% if (extraordinarios.length) { %>
@@ -214,7 +207,30 @@
       <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th data-label="Gastos"><%= sumCol(impuestos,'montoDebitado') %></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
+    <% if (recTrab.length) { %>
+    <div class="card"><h3>Detalle recaudación para trabajos</h3><div style="overflow-x:auto">
+      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
+        <% recTrab.forEach(function(g) { %>
+        <tr>
+          <td data-label="Proveedor"><%= g.proveedor %></td>
+          <td data-label="N° Comprobante"><%= comp(g.nroComprobante) %></td>
+          <td data-label="Fecha"><%= g.fecha %></td>
+          <td data-label="Importe"><%= money(g.importe) %></td>
+          <td data-label="Gastos"><%= money(g.montoDebitado) %></td>
+          <td data-label="Estado"><span class="badge"><%= g.estado %></span></td>
+        </tr>
+        <% }); %>
+      </tbody>
+      <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th></th><th></th><th data-label="Gastos"><%= sumCol(recTrab,'montoDebitado') %></th><th></th></tr></tfoot>
+      </table></div></div>
+    <% } %>
   </section>
 </div>
+<div class="pdf-footer" style="display:none">Powered by Flowit</div>
+<style>
+  @media print {
+    .pdf-footer { display:block !important; text-align:center; margin-top:24px; padding-top:12px; border-top:1px solid #ddd; font-size:11px; color:#5f5e5a; }
+  }
+</style>
 <% } %>
 <%- include('footer') %>
