@@ -17,7 +17,7 @@
       <thead>
         <tr>
           <th><input type="checkbox" id="check-todos" onclick="document.querySelectorAll('.chk-uf').forEach(function(c){c.checked=this.checked}.bind(this))"></th>
-          <th>UF</th><th>Propietario</th><th>Email</th><th>Deuda arrastrada</th><th>A abonar (1er venc.)</th>
+          <th>UF</th><th>Depto</th><th>Propietario</th><th>Email</th><th>Deuda arrastrada</th><th>A abonar (1er venc.)</th>
         </tr>
       </thead>
       <tbody>
@@ -25,6 +25,7 @@
         <tr>
           <td data-label=""><input type="checkbox" class="chk-uf" name="ufs" value="<%= d.uf %>" <%= !d.email ? 'disabled title="Sin email cargado"' : '' %>></td>
           <td data-label="UF"><strong><%= d.uf %></strong></td>
+          <td data-label="Depto"><%= d.depto %></td>
           <td data-label="Propietario"><%= d.propietario %></td>
           <td data-label="Email"><%= d.email || '—' %></td>
           <td data-label="Deuda arrastrada"><strong><%= money(d.deuda) %></strong></td>
@@ -32,6 +33,13 @@
         </tr>
         <% }); %>
       </tbody>
+      <tfoot>
+        <tr class="fila-total">
+          <th></th><th></th><th></th><th>TOTAL</th>
+          <th><%= money(deudores.reduce(function(s,d){return s+d.deuda;},0)) %></th>
+          <th><%= money(deudores.reduce(function(s,d){return s+d.aAbonar;},0)) %></th>
+        </tr>
+      </tfoot>
     </table>
     </div>
     <button type="submit" class="btn btn-primary" style="margin-top:16px">✉️ Enviar recordatorio de pago a los seleccionados</button>
