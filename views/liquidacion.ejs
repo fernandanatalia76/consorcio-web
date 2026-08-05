@@ -34,6 +34,7 @@
   .deudor-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
   .deudor-uf { font-size: 14px; color: #333; font-weight: 600; }
   .deudor-monto { font-weight: bold; color: #c5221f; white-space: nowrap; }
+  .deudor-total { border-bottom: none; border-top: 2px solid #c5221f; padding-top: 8px; margin-top: 2px; }
 </style>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (cache && cache.publicado) { %>
@@ -99,10 +100,14 @@
         <div class="deudores-lista">
           <% listaDeudores.forEach(function(d){ %>
             <div class="deudor-item">
-              <div class="deudor-uf">UF <%= d.uf %><% if (d.depto) { %> · <%= d.depto %><% } %></div>
+              <div class="deudor-uf"><%= d.tipoUnidad || 'Unidad' %> <%= d.numeroUnidad %></div>
               <div class="deudor-monto"><%= money(d.deuda) %></div>
             </div>
           <% }); %>
+          <div class="deudor-item deudor-total">
+            <div class="deudor-uf"><strong>TOTAL</strong></div>
+            <div class="deudor-monto"><%= money(listaDeudores.reduce(function(s,d){return s+d.deuda;},0)) %></div>
+          </div>
         </div>
       <% } else { %>
         <p class="nota">No hay deudores registrados este ciclo.</p>
