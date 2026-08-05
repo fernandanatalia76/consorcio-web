@@ -201,6 +201,8 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
   var ssid = req.session.spreadsheetId;
   var comunicados = [];
   try { comunicados = (await sheets.leerComunicados(ssid)).filter(function (c) { return c.activo; }).reverse(); } catch (e) { /* no bloquear */ }
+  var deudores = [];
+  try { deudores = (await sheets.leerDeudores(ssid)).map(function (d) { return { uf: d.uf, propietario: d.propietario, deuda: d.deuda }; }); } catch (e) { /* no bloquear */ }
   var misUfs = req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf, tipo: req.session.usuario.tipo || 'propietario' }];
   var cacheLiq = getCacheLiq(ssid);
   if (!cacheLiq.publicado) {
@@ -208,7 +210,7 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
       datos: [], mesLabel: '', error: null,
       dia1: '', dia2: '', mesVenc: '', anioVenc: '',
       cache: { publicado: false, fechaHora: null, esAdmin: esAdmin },
-      comunicados: comunicados
+      comunicados: comunicados, deudores: deudores
     });
   }
   var c = cacheLiq.datos;
@@ -233,7 +235,7 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
     datos: datos, mesLabel: c.mesLabel, error: c.error,
     dia1: c.dia1, dia2: c.dia2, mesVenc: c.mesVenc, anioVenc: c.anioVenc,
     cache: { publicado: true, fechaHora: cacheLiq.fechaHora, esAdmin: esAdmin },
-    comunicados: comunicados
+    comunicados: comunicados, deudores: deudores
   });
 });
 app.get('/liquidacion-completa', requireLogin, async function (req, res) {
@@ -547,6 +549,56 @@ app.post('/admin/test-email', requireAdmin, async function (req, res) {
   res.redirect('/admin?msg=' + encodeURIComponent(r.ok ? ('Email de prueba enviado a ' + destino) : ('Error al enviar: ' + r.error)));
 });
 // ==================== COMUNICADOS (avisos del administrador) ====================
+// ==================== DEUDORES ====================
+// Junta la solapa "Deudores" (generada por Apps Script al calcular la
+// liquidación) con el email de cada UF (solapa "UF"), para poder
+// mostrarlos y mandar recordatorios de pago.
+async function cargarDeudoresConEmail(ssid) {
+  var deudores = await sheets.leerDeudores(ssid);
+  var ufs = await sheets.leerUFs(ssid);
+  var emailPorUf = {};
+  ufs.forEach(function (u) { emailPorUf[u.uf] = u.email || ''; });
+  return deudores.map(function (d) {
+    return Object.assign({}, d, { email: emailPorUf[d.uf] || '' });
+  });
+}
+app.get('/admin/deudores', requireAdmin, async function (req, res) {
+  var ssid = req.session.spreadsheetId;
+  try {
+    var deudores = await cargarDeudoresConEmail(ssid);
+    var flash = req.session.flash || null;
+    req.session.flash = null;
+    res.render('admin-deudores', { deudores: deudores, error: null, flash: flash });
+  } catch (e) { res.render('admin-deudores', { deudores: [], error: e.message, flash: null }); }
+});
+app.post('/admin/deudores/enviar-recordatorio', requireAdmin, async function (req, res) {
+  var ssid = req.session.spreadsheetId;
+  try {
+    var seleccionadas = req.body.ufs;
+    if (!seleccionadas) throw new Error('No seleccionaste ninguna UF.');
+    if (!Array.isArray(seleccionadas)) seleccionadas = [seleccionadas];
+    var deudores = await cargarDeudoresConEmail(ssid);
+    var nombreConsorcio = req.session.consorcioNombre || 'tu consorcio';
+    var enviados = 0, sinEmail = 0, fallidos = 0;
+    for (var i = 0; i < seleccionadas.length; i++) {
+      var d = deudores.find(function (x) { return x.uf === seleccionadas[i]; });
+      if (!d) continue;
+      if (!d.email) { sinEmail++; continue; }
+      var montoFmt = '$' + d.deuda.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      var r = await mailer.enviar(d.email,
+        '⏰ Recordatorio de pago — ' + nombreConsorcio,
+        'Hola,\n\nTe recordamos que la UF ' + d.uf + (d.depto ? (' (' + d.depto + ')') : '') + ' registra una deuda de ' + montoFmt + ' con ' + nombreConsorcio + '.\n\n' +
+        'Te pedimos regularizar tu situación a la brevedad. Podés ver el detalle completo entrando al portal: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') +
+        '\n\nAnte cualquier consulta, contactate con la administración.\n\nSaludos,\nAdministración del Consorcio');
+      if (r.ok) enviados++; else fallidos++;
+    }
+    req.session.flash = { tipo: 'aviso', texto: 'Recordatorios enviados: ' + enviados + (sinEmail ? (' — sin email: ' + sinEmail) : '') + (fallidos ? (' — fallaron: ' + fallidos) : '') + '.' };
+  } catch (e) {
+    req.session.flash = { tipo: 'aviso', texto: 'Error: ' + e.message };
+  }
+  res.redirect('/admin/deudores');
+});
+
 app.get('/admin/comunicados', requireAdmin, async function (req, res) {
   var ssid = req.session.spreadsheetId;
   try {
