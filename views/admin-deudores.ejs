@@ -1,0 +1,43 @@
+<%- include('header') %>
+<% function money(v){
+  var n = Number(v||0);
+  var neg = n < 0; n = Math.abs(n);
+  var partes = n.toFixed(2).split('.');
+  var entero = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (neg?'-':'') + '$' + entero + ',' + partes[1];
+} %>
+<h1>Deudores</h1>
+<% if (error) { %><div class="msg error"><%= error %></div><% } %>
+<% if (typeof flash !== 'undefined' && flash) { %><div class="msg success"><%= flash.texto %></div><% } %>
+<div class="card">
+  <% if (deudores.length) { %>
+  <form method="POST" action="/admin/deudores/enviar-recordatorio">
+    <div style="overflow-x:auto">
+    <table class="tabla tabla-striped rtable">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="check-todos" onclick="document.querySelectorAll('.chk-uf').forEach(function(c){c.checked=this.checked}.bind(this))"></th>
+          <th>UF</th><th>Propietario</th><th>Email</th><th>Deuda arrastrada</th><th>A abonar (1er venc.)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% deudores.forEach(function(d) { %>
+        <tr>
+          <td data-label=""><input type="checkbox" class="chk-uf" name="ufs" value="<%= d.uf %>" <%= !d.email ? 'disabled title="Sin email cargado"' : '' %>></td>
+          <td data-label="UF"><strong><%= d.uf %></strong></td>
+          <td data-label="Propietario"><%= d.propietario %></td>
+          <td data-label="Email"><%= d.email || '—' %></td>
+          <td data-label="Deuda arrastrada"><strong><%= money(d.deuda) %></strong></td>
+          <td data-label="A abonar (1er venc.)"><%= money(d.aAbonar) %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top:16px">✉️ Enviar recordatorio de pago a los seleccionados</button>
+  </form>
+  <% } else { %>
+    <p class="nota">✅ No hay deudores registrados este ciclo.</p>
+  <% } %>
+</div>
+<%- include('footer') %>

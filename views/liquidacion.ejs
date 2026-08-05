@@ -30,6 +30,10 @@
   .liq-total-monto { line-height: 1.2; }
   .liq-detalle { padding-top: 6px; padding-bottom: 6px; }
   .liq-det-item { padding-top: 4px; padding-bottom: 4px; }
+  .deudores-lista { display: flex; flex-direction: column; gap: 10px; }
+  .deudor-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+  .deudor-uf { font-size: 14px; color: #333; font-weight: 600; }
+  .deudor-monto { font-weight: bold; color: #c5221f; white-space: nowrap; }
 </style>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (cache && cache.publicado) { %>
@@ -85,7 +89,28 @@
     }
   </script>
 <% } %>
-<% if (cache && cache.publicado && datos && datos.length) { %>
+<% if (cache && cache.publicado) { %>
+<div class="gastos-grid">
+  <aside class="cf-sidebar">
+    <div class="card cf-historico">
+      <h3>Deudores</h3>
+      <% var listaDeudores = (typeof deudores !== 'undefined' && deudores) ? deudores : []; %>
+      <% if (listaDeudores.length) { %>
+        <div class="deudores-lista">
+          <% listaDeudores.forEach(function(d){ %>
+            <div class="deudor-item">
+              <div class="deudor-uf">UF <%= d.uf %><% if (d.depto) { %> · <%= d.depto %><% } %></div>
+              <div class="deudor-monto"><%= money(d.deuda) %></div>
+            </div>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <p class="nota">No hay deudores registrados este ciclo.</p>
+      <% } %>
+    </div>
+  </aside>
+  <section class="gastos-main">
+  <% if (datos && datos.length) { %>
   <% datos.forEach(function(item, idx) {
        var dato = item.dato;
        var tipoLabel = item.tipo === 'inquilino' ? 'inquilino' : 'propietario';
@@ -163,7 +188,10 @@
       <div class="msg warning">No se encontraron datos para la UF <%= item.uf %> en la liquidación de <%= mesLabel %>.</div>
     <% } %>
   <% }); %>
-<% } else if (cache && cache.publicado && !error) { %>
-  <div class="msg warning">No se encontraron datos en la liquidación de <%= mesLabel %>.</div>
+  <% } else if (!error) { %>
+    <div class="msg warning">No se encontraron datos en la liquidación de <%= mesLabel %>.</div>
+  <% } %>
+  </section>
+</div>
 <% } %>
 <%- include('footer') %>
