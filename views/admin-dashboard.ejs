@@ -19,7 +19,8 @@
     return k ? di[k] : '';
   }
 %>
-<h1>Panel de Administración</h1>
+<h1>Panel de Administración<% if (consorcioNombre) { %> — <%= consorcioNombre %><% } %></h1>
+<p class="nota" style="margin-top:-8px;margin-bottom:16px"><a href="/logout">🔀 Cambiar de consorcio</a> (cierra esta sesión y volvés a elegir edificio)</p>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (msg) { %><div class="msg success"><%= msg %></div><% } %>
 <% if (flash && flash.tipo === 'aviso') { %>
