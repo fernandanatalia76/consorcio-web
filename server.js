@@ -202,7 +202,7 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
   var comunicados = [];
   try { comunicados = (await sheets.leerComunicados(ssid)).filter(function (c) { return c.activo; }).reverse(); } catch (e) { /* no bloquear */ }
   var deudores = [];
-  try { deudores = (await sheets.leerDeudores(ssid)).map(function (d) { return { uf: d.uf, propietario: d.propietario, deuda: d.deuda }; }); } catch (e) { /* no bloquear */ }
+  try { deudores = (await sheets.leerDeudores(ssid)).map(function (d) { return { uf: d.uf, depto: d.depto, deuda: d.deuda }; }); } catch (e) { /* no bloquear */ }
   var misUfs = req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf, tipo: req.session.usuario.tipo || 'propietario' }];
   var cacheLiq = getCacheLiq(ssid);
   if (!cacheLiq.publicado) {
