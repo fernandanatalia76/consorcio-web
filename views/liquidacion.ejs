@@ -22,6 +22,15 @@
   }
 %>
 <h1>Mi Liquidación<% if (mesLabel) { %> — <%= mesLabel %><% } %></h1>
+<style>
+  /* FIX: tarjetas más chatas (menos alto) y con espacio entre ellas */
+  .liq-card { margin-bottom: 24px; padding-top: 12px; padding-bottom: 12px; }
+  .liq-head { padding-top: 4px; padding-bottom: 4px; }
+  .liq-total-box { padding-top: 8px; padding-bottom: 8px; }
+  .liq-total-monto { line-height: 1.2; }
+  .liq-detalle { padding-top: 6px; padding-bottom: 6px; }
+  .liq-det-item { padding-top: 4px; padding-bottom: 4px; }
+</style>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (cache && cache.publicado) { %>
 <div class="cache-banner">
