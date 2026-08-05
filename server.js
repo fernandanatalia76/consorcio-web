@@ -204,8 +204,15 @@ function calcularDeudoresDesdeLiquidacion(ssid) {
   var cacheLiq = getCacheLiq(ssid);
   if (!cacheLiq.publicado || !cacheLiq.datos || !cacheLiq.datos.liq || !cacheLiq.datos.liq.datos) return [];
   var lista = cacheLiq.datos.liq.datos.map(function (d) {
+    var depto = d.depto || '';
+    var esCochera = /desc|cub/i.test(depto);
+    var tipoUnidad = esCochera ? 'Cochera' : (depto ? 'Depto' : '');
+    // El número de cochera viene mezclado con la palabra "desc"/"cub"
+    // (ej. "1 desc", "16cub") — nos quedamos solo con los dígitos.
+    var mNum = /(\d+)/.exec(depto);
+    var numeroUnidad = mNum ? mNum[1] : depto;
     return {
-      uf: d.uf, depto: d.depto || '', propietario: d.propietario || '',
+      uf: d.uf, depto: depto, tipoUnidad: tipoUnidad, numeroUnidad: numeroUnidad, propietario: d.propietario || '',
       deuda: parseMonto(d.deuda), aAbonar: parseMonto(d.venc1)
     };
   }).filter(function (d) { return d.deuda > 1; }); // tolerancia de $1 por redondeos
@@ -218,7 +225,7 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
   var ssid = req.session.spreadsheetId;
   var comunicados = [];
   try { comunicados = (await sheets.leerComunicados(ssid)).filter(function (c) { return c.activo; }).reverse(); } catch (e) { /* no bloquear */ }
-  var deudores = calcularDeudoresDesdeLiquidacion(ssid).map(function (d) { return { uf: d.uf, depto: d.depto, deuda: d.deuda }; });
+  var deudores = calcularDeudoresDesdeLiquidacion(ssid).map(function (d) { return { tipoUnidad: d.tipoUnidad, numeroUnidad: d.numeroUnidad, deuda: d.deuda }; });
   var misUfs = req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf, tipo: req.session.usuario.tipo || 'propietario' }];
   var cacheLiq = getCacheLiq(ssid);
   if (!cacheLiq.publicado) {
