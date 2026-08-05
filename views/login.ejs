@@ -9,21 +9,39 @@
   <span class="login-logo-text">Flow<span class="login-logo-it">it</span></span>
 </div>
 <div class="auth-card">
-  <h1>Consorcio Pueyrredón 1359</h1>
-  <h2>Iniciar sesión</h2>
-  <% if (error) { %><div class="msg error"><%= error %></div><% } %>
-  <form method="POST" action="/login">
-    <label>N° de Unidad Funcional</label>
-    <input type="text" name="uf" placeholder="Ej: 10" required>
-    <label>Soy</label>
-    <div class="tipo-radios">
-      <label class="tipo-opt"><input type="radio" name="tipo" value="propietario" checked> Propietario</label>
-      <label class="tipo-opt"><input type="radio" name="tipo" value="inquilino"> Inquilino</label>
-    </div>
-    <label>Contraseña</label>
-    <input type="password" name="password" required>
-    <button type="submit" class="btn btn-primary">Ingresar</button>
-  </form>
-  <p class="auth-link">¿Primera vez? <a href="/registrar">Registrate acá</a></p>
+  <% if (!consorcioElegido) { %>
+    <h1>Portal de Consorcios</h1>
+    <h2>Elegí tu consorcio</h2>
+    <% if (error) { %><div class="msg error"><%= error %></div><% } %>
+    <form method="GET" action="/login">
+      <label>Consorcio</label>
+      <select name="c" required style="width:100%;padding:10px;margin-bottom:16px">
+        <option value="" disabled selected>Elegí un consorcio…</option>
+        <% consorcios.forEach(function(c){ %>
+          <option value="<%= c.spreadsheetId %>"><%= c.nombre %></option>
+        <% }); %>
+      </select>
+      <button type="submit" class="btn btn-primary">Continuar</button>
+    </form>
+  <% } else { %>
+    <h1><%= consorcioElegido.nombre %></h1>
+    <h2>Iniciar sesión</h2>
+    <% if (error) { %><div class="msg error"><%= error %></div><% } %>
+    <form method="POST" action="/login">
+      <input type="hidden" name="consorcioId" value="<%= consorcioElegido.spreadsheetId %>">
+      <label>N° de Unidad Funcional</label>
+      <input type="text" name="uf" placeholder="Ej: 10" required>
+      <label>Soy</label>
+      <div class="tipo-radios">
+        <label class="tipo-opt"><input type="radio" name="tipo" value="propietario" checked> Propietario</label>
+        <label class="tipo-opt"><input type="radio" name="tipo" value="inquilino"> Inquilino</label>
+      </div>
+      <label>Contraseña</label>
+      <input type="password" name="password" required>
+      <button type="submit" class="btn btn-primary">Ingresar</button>
+    </form>
+    <p class="auth-link"><a href="/login">← Elegir otro consorcio</a></p>
+    <p class="auth-link">¿Primera vez? <a href="/registrar?c=<%= encodeURIComponent(consorcioElegido.spreadsheetId) %>">Registrate acá</a></p>
+  <% } %>
 </div>
 <%- include('footer') %>
