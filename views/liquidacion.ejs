@@ -59,14 +59,31 @@
 <% } %>
 <% if (typeof comunicados !== 'undefined' && comunicados && comunicados.length) { %>
   <% comunicados.forEach(function(com){ %>
-    <div class="alerta-legal" style="background:#e8f0fe;border-color:#1a4a6e">
+    <div class="alerta-legal comunicado-item" data-comunicado-id="<%= com.fila %>" style="background:#e8f0fe;border-color:#1a4a6e;position:relative">
       <div class="alerta-icono">📢</div>
       <div class="alerta-texto">
         <strong>Comunicado de la administración</strong> <span class="nota">(<%= com.fecha %>)</span><br>
         <%= com.mensaje %>
       </div>
+      <button type="button" class="comunicado-cerrar" onclick="cerrarComunicado(this)" aria-label="Cerrar" style="position:absolute;top:8px;right:10px;background:none;border:none;font-size:18px;cursor:pointer;color:#1a4a6e;line-height:1">✕</button>
     </div>
   <% }); %>
+  <script>
+    (function(){
+      var descartados = JSON.parse(localStorage.getItem('comunicadosDescartados') || '[]');
+      document.querySelectorAll('.comunicado-item').forEach(function(el){
+        if (descartados.indexOf(el.getAttribute('data-comunicado-id')) !== -1) el.style.display = 'none';
+      });
+    })();
+    function cerrarComunicado(btn){
+      var el = btn.closest('.comunicado-item');
+      var id = el.getAttribute('data-comunicado-id');
+      var descartados = JSON.parse(localStorage.getItem('comunicadosDescartados') || '[]');
+      if (descartados.indexOf(id) === -1) descartados.push(id);
+      localStorage.setItem('comunicadosDescartados', JSON.stringify(descartados));
+      el.style.display = 'none';
+    }
+  </script>
 <% } %>
 <% if (cache && cache.publicado && datos && datos.length) { %>
   <% datos.forEach(function(item, idx) {
