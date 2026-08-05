@@ -219,6 +219,13 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
     var info = ufsInfo[u.uf] || {};
     return { uf: u.uf, tipo: u.tipo, depto: info.depto || '', tipoUf: info.tipoUf || '', dato: dato };
   });
+  // FIX: mostrar primero la UF de departamento y recién después la de
+  // cochera (si la persona tiene ambas), en vez del orden que venga.
+  datos.sort(function (a, b) {
+    var aEsCochera = /coch/i.test(a.tipoUf || '') ? 1 : 0;
+    var bEsCochera = /coch/i.test(b.tipoUf || '') ? 1 : 0;
+    return aEsCochera - bEsCochera;
+  });
   res.render('liquidacion', {
     datos: datos, mesLabel: c.mesLabel, error: c.error,
     dia1: c.dia1, dia2: c.dia2, mesVenc: c.mesVenc, anioVenc: c.anioVenc,
