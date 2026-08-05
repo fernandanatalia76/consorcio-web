@@ -199,13 +199,16 @@ async function cargarLiquidacionDesdeSheets(ssid) {
 app.get('/mi-liquidacion', requireLogin, async function (req, res) {
   var esAdmin = req.session.usuario.rol === 'admin';
   var ssid = req.session.spreadsheetId;
+  var comunicados = [];
+  try { comunicados = (await sheets.leerComunicados(ssid)).filter(function (c) { return c.activo; }).reverse(); } catch (e) { /* no bloquear */ }
   var misUfs = req.session.usuario.ufsUsuario || [{ uf: req.session.usuario.uf, tipo: req.session.usuario.tipo || 'propietario' }];
   var cacheLiq = getCacheLiq(ssid);
   if (!cacheLiq.publicado) {
     return res.render('liquidacion', {
       datos: [], mesLabel: '', error: null,
       dia1: '', dia2: '', mesVenc: '', anioVenc: '',
-      cache: { publicado: false, fechaHora: null, esAdmin: esAdmin }
+      cache: { publicado: false, fechaHora: null, esAdmin: esAdmin },
+      comunicados: comunicados
     });
   }
   var c = cacheLiq.datos;
@@ -229,7 +232,8 @@ app.get('/mi-liquidacion', requireLogin, async function (req, res) {
   res.render('liquidacion', {
     datos: datos, mesLabel: c.mesLabel, error: c.error,
     dia1: c.dia1, dia2: c.dia2, mesVenc: c.mesVenc, anioVenc: c.anioVenc,
-    cache: { publicado: true, fechaHora: cacheLiq.fechaHora, esAdmin: esAdmin }
+    cache: { publicado: true, fechaHora: cacheLiq.fechaHora, esAdmin: esAdmin },
+    comunicados: comunicados
   });
 });
 app.get('/liquidacion-completa', requireLogin, async function (req, res) {
@@ -410,13 +414,16 @@ async function cargarGastosDesdeSheets(ssid) {
 app.get('/gastos', requireLogin, async function (req, res) {
   var esAdmin = req.session.usuario.rol === 'admin';
   var ssid = req.session.spreadsheetId;
+  var comunicados = [];
+  try { comunicados = (await sheets.leerComunicados(ssid)).filter(function (c) { return c.activo; }).reverse(); } catch (e) { /* no bloquear */ }
   var cacheGastos = getCacheGastos(ssid);
   if (!cacheGastos.publicado) {
     return res.render('gastos', {
       gastos: [], impuestos: [], recaudacionTrabajos: [], cashflow: null, cashflowHistorico: [],
       cashflowExtra: null, cashflowExtraHistorico: [],
       mesLabel: '', error: null,
-      cache: { publicado: false, fechaHora: null, quienActualizo: null, esAdmin: esAdmin }
+      cache: { publicado: false, fechaHora: null, quienActualizo: null, esAdmin: esAdmin },
+      comunicados: comunicados
     });
   }
   var d = cacheGastos.datos;
@@ -431,7 +438,8 @@ app.get('/gastos', requireLogin, async function (req, res) {
       fechaHora: cacheGastos.fechaHora,
       quienActualizo: cacheGastos.quienActualizo,
       esAdmin: esAdmin
-    }
+    },
+    comunicados: comunicados
   });
 });
 app.post('/admin/gastos/actualizar', requireAdmin, async function (req, res) {
@@ -538,6 +546,63 @@ app.post('/admin/test-email', requireAdmin, async function (req, res) {
     'Este es un email de prueba. Si lo recibiste, la configuración SMTP funciona correctamente.');
   res.redirect('/admin?msg=' + encodeURIComponent(r.ok ? ('Email de prueba enviado a ' + destino) : ('Error al enviar: ' + r.error)));
 });
+// ==================== COMUNICADOS (avisos del administrador) ====================
+app.get('/admin/comunicados', requireAdmin, async function (req, res) {
+  var ssid = req.session.spreadsheetId;
+  try {
+    var lista = await sheets.leerComunicados(ssid);
+    var flash = req.session.flash || null;
+    req.session.flash = null;
+    res.render('admin-comunicados', { comunicados: lista.slice().reverse(), error: null, flash: flash });
+  } catch (e) { res.render('admin-comunicados', { comunicados: [], error: e.message, flash: null }); }
+});
+app.post('/admin/comunicados/nuevo', requireAdmin, async function (req, res) {
+  var ssid = req.session.spreadsheetId;
+  try {
+    var mensaje = String(req.body.mensaje || '').trim();
+    if (!mensaje) throw new Error('El mensaje no puede estar vacío.');
+    var fecha = new Date().toLocaleDateString('es-AR');
+    await sheets.agregarComunicado(ssid, mensaje, fecha);
+
+    // Enviar también por mail a todos los consorcistas activos (sin
+    // duplicar si una persona tiene más de una UF con el mismo email).
+    var enviados = 0, fallidos = 0;
+    try {
+      var usuarios = await authLib.listarUsuarios(ssid);
+      var emailsYaEnviados = {};
+      var nombreConsorcio = req.session.consorcioNombre || 'tu consorcio';
+      for (var i = 0; i < usuarios.length; i++) {
+        var u = usuarios[i];
+        var email = String(u.email || '').trim().toLowerCase();
+        if (!u.activo || !email || emailsYaEnviados[email]) continue;
+        emailsYaEnviados[email] = true;
+        var r = await mailer.enviar(u.email,
+          '📢 Comunicado de la administración — ' + nombreConsorcio,
+          'Hola,\n\nLa administración de ' + nombreConsorcio + ' publicó el siguiente comunicado:\n\n' +
+          mensaje +
+          '\n\nPodés verlo también entrando al portal: ' + (process.env.SITE_URL || 'https://consorcio-web.onrender.com') +
+          '\n\nSaludos,\nAdministración del Consorcio');
+        if (r.ok) enviados++; else fallidos++;
+      }
+    } catch (eMail) { console.log('[COMUNICADOS] Error enviando mails:', eMail.message); }
+
+    req.session.flash = { tipo: 'aviso', texto: 'Comunicado publicado. Mails enviados: ' + enviados + (fallidos ? (' (fallaron ' + fallidos + ')') : '') + '.' };
+  } catch (e) {
+    req.session.flash = { tipo: 'aviso', texto: 'Error al publicar: ' + e.message };
+  }
+  res.redirect('/admin/comunicados');
+});
+app.post('/admin/comunicados/desactivar', requireAdmin, async function (req, res) {
+  var ssid = req.session.spreadsheetId;
+  try {
+    await sheets.desactivarComunicado(ssid, parseInt(req.body.fila, 10));
+    req.session.flash = { tipo: 'aviso', texto: 'Comunicado retirado.' };
+  } catch (e) {
+    req.session.flash = { tipo: 'aviso', texto: 'Error: ' + e.message };
+  }
+  res.redirect('/admin/comunicados');
+});
+
 app.get('/admin/liquidacion', requireAdmin, function (req, res) {
   var ssid = req.session.spreadsheetId;
   var cacheLiq = getCacheLiq(ssid);
