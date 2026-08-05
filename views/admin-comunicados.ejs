@@ -1,0 +1,35 @@
+<%- include('header') %>
+<h1>📢 Comunicados</h1>
+<% if (error) { %><div class="msg error"><%= error %></div><% } %>
+<% if (typeof flash !== 'undefined' && flash) { %><div class="msg success"><%= flash.texto %></div><% } %>
+<div class="card" style="max-width:600px">
+  <h3>Publicar nuevo comunicado</h3>
+  <form method="POST" action="/admin/comunicados/nuevo">
+    <textarea name="mensaje" rows="4" placeholder="Ej: Este sábado se realizará mantenimiento del ascensor de 9 a 13hs." style="width:100%;padding:10px" required></textarea>
+    <br><br>
+    <button type="submit" class="btn btn-primary">📤 Publicar</button>
+  </form>
+  <p class="nota" style="margin-top:8px">Se muestra como un aviso destacado a todos los consorcistas en "Mi Liquidación" y "Gastos" hasta que lo retires.</p>
+</div>
+<div class="card">
+  <h3>Comunicados publicados</h3>
+  <% if (comunicados.length) { %>
+    <% comunicados.forEach(function(c){ %>
+      <div style="border-bottom:1px solid #eee;padding:12px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <div class="nota"><%= c.fecha %> <% if (!c.activo) { %>— <em>(retirado)</em><% } %></div>
+          <div><%= c.mensaje %></div>
+        </div>
+        <% if (c.activo) { %>
+        <form method="POST" action="/admin/comunicados/desactivar" style="flex-shrink:0">
+          <input type="hidden" name="fila" value="<%= c.fila %>">
+          <button type="submit" class="btn btn-sm" style="background:#e65100">Retirar</button>
+        </form>
+        <% } %>
+      </div>
+    <% }); %>
+  <% } else { %>
+    <p class="nota">Todavía no publicaste ningún comunicado.</p>
+  <% } %>
+</div>
+<%- include('footer') %>

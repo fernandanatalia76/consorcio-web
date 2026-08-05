@@ -74,6 +74,17 @@
   <% } %>
 </div>
 <% } %>
+<% if (typeof comunicados !== 'undefined' && comunicados && comunicados.length) { %>
+  <% comunicados.forEach(function(com){ %>
+    <div class="alerta-legal" style="background:#e8f0fe;border-color:#1a4a6e">
+      <div class="alerta-icono">📢</div>
+      <div class="alerta-texto">
+        <strong>Comunicado de la administración</strong> <span class="nota">(<%= com.fecha %>)</span><br>
+        <%= com.mensaje %>
+      </div>
+    </div>
+  <% }); %>
+<% } %>
 <% if (cache && cache.publicado) { %>
 <%
   var cfHist = (typeof cashflowHistorico !== 'undefined' && cashflowHistorico) ? cashflowHistorico : [];
