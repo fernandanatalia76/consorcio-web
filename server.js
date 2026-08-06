@@ -182,6 +182,65 @@ app.post('/registrar', async function (req, res) {
   } catch (e) { res.render('registrar', { error: e.message, ok: false, consorcioId: req.body.consorcioId, consorcioNombre: '' }); }
 });
 app.get('/logout', function (req, res) { req.session.destroy(function () { res.redirect('/login'); }); });
+
+// ==================== OLVIDÉ MI CONTRASEÑA ====================
+function generarPasswordAleatoria() {
+  return Math.random().toString(36).slice(-8);
+}
+app.get('/olvide-password', async function (req, res) {
+  var c = req.query.c;
+  var consorcio = c ? await directorio.buscarPorSpreadsheetId(c) : null;
+  if (!consorcio) return res.redirect('/login');
+  res.render('olvide-password', { error: null, ok: false, consorcioId: consorcio.spreadsheetId, consorcioNombre: consorcio.nombre });
+});
+app.post('/olvide-password', async function (req, res) {
+  var consorcioId = req.body.consorcioId;
+  var consorcio = await directorio.buscarPorSpreadsheetId(consorcioId);
+  if (!consorcio) return res.redirect('/login');
+  try {
+    var uf = String(req.body.uf || '').trim();
+    var tipo = String(req.body.tipo || 'propietario').toLowerCase();
+    if (tipo !== 'inquilino') tipo = 'propietario';
+    var emailIngresado = String(req.body.email || '').trim().toLowerCase();
+    var usuarios = await sheets.leerUsuarios(consorcioId);
+    var x = usuarios.find(function (u) { return u.uf === uf && (u.tipo || 'propietario') === tipo && u.rol !== 'admin'; });
+    // FIX: por seguridad, siempre mostramos el mismo mensaje de éxito
+    // exista o no la combinación UF+email — así no se puede usar este
+    // formulario para "adivinar" qué UF están registradas.
+    if (x && x.activo && x.email && String(x.email).trim().toLowerCase() === emailIngresado) {
+      var nuevaPw = generarPasswordAleatoria();
+      var r = await authLib.blanquearClave(consorcioId, uf, nuevaPw, tipo);
+      if (r.ok && r.email) {
+        var loginUrl = (process.env.SITE_URL || 'https://consorcio-web.onrender.com') + '/login?c=' + encodeURIComponent(consorcioId);
+        var listaUf = (r.ufs && r.ufs.length > 1) ? r.ufs.join(' y ') : uf;
+        await mailer.enviar(r.email, 'Nueva contraseña — ' + consorcio.nombre,
+          'Hola,\n\nRecibimos tu pedido de restablecer la contraseña.\n\nIngresá a: ' + loginUrl +
+          '\nUsuario (UF): ' + listaUf + '\nContraseña nueva: ' + nuevaPw +
+          '\n\nSi vos no pediste esto, ignorá este mail y contactate con la administración.\n\nSaludos,\nAdministración del Consorcio');
+      }
+    }
+    res.render('olvide-password', { error: null, ok: true, consorcioId: consorcioId, consorcioNombre: consorcio.nombre });
+  } catch (e) {
+    res.render('olvide-password', { error: e.message, ok: false, consorcioId: consorcioId, consorcioNombre: consorcio.nombre });
+  }
+});
+
+// ==================== CAMBIAR MI CONTRASEÑA (consorcista logueado) ====================
+app.get('/mi-cuenta/cambiar-password', requireLogin, function (req, res) {
+  if (req.session.usuario.rol === 'admin') return res.redirect('/admin');
+  res.render('cambiar-password', { error: null, ok: false });
+});
+app.post('/mi-cuenta/cambiar-password', requireLogin, async function (req, res) {
+  if (req.session.usuario.rol === 'admin') return res.redirect('/admin');
+  var ssid = req.session.spreadsheetId;
+  var u = req.session.usuario;
+  try {
+    var r = await authLib.cambiarPasswordPropia(ssid, u.uf, u.tipo, req.body.actual, req.body.nueva);
+    res.render('cambiar-password', { error: r.ok ? null : r.error, ok: r.ok });
+  } catch (e) {
+    res.render('cambiar-password', { error: e.message, ok: false });
+  }
+});
 async function cargarLiquidacionDesdeSheets(ssid) {
   var di = await sheets.leerDatosInicio(ssid);
   var ma = getMesActivo(di);
