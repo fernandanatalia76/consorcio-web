@@ -508,6 +508,19 @@ async function cargarGastosDesdeSheets(ssid) {
     mesLabel: mg.mesLabel
   };
 }
+// Sirve el archivo de una factura directo desde Drive, usando la cuenta
+// de servicio del portal — así nadie tiene que loguearse en Google ni
+// pedir acceso, el servidor ya tiene permiso de lectura.
+app.get('/factura/:fileId', requireLogin, async function (req, res) {
+  try {
+    var archivo = await sheets.descargarArchivoDrive(req.params.fileId);
+    res.set('Content-Type', archivo.mimeType || 'application/octet-stream');
+    res.set('Content-Disposition', 'inline; filename="' + (archivo.nombre || 'factura').replace(/"/g, '') + '"');
+    res.send(archivo.buffer);
+  } catch (e) {
+    res.status(404).send('No se pudo cargar la factura: ' + e.message);
+  }
+});
 app.get('/gastos', requireLogin, async function (req, res) {
   var esAdmin = req.session.usuario.rol === 'admin';
   var ssid = req.session.spreadsheetId;
