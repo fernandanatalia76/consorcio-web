@@ -41,6 +41,7 @@
       <button type="submit" class="btn btn-primary">Ingresar</button>
     </form>
     <p class="auth-link"><a href="/login">← Elegir otro consorcio</a></p>
+    <p class="auth-link"><a href="/olvide-password?c=<%= encodeURIComponent(consorcioElegido.spreadsheetId) %>">¿Olvidaste tu contraseña?</a></p>
     <p class="auth-link">¿Primera vez? <a href="/registrar?c=<%= encodeURIComponent(consorcioElegido.spreadsheetId) %>">Registrate acá</a></p>
   <% } %>
 </div>
