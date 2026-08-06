@@ -617,6 +617,31 @@ app.post('/admin/blanquear', requireAdmin, async function (req, res) {
   req.session.flash = { tipo: 'credenciales', accion: 'blanqueada', uf: uf, ufs: r.ufs || [uf], password: pw, tipoUsuario: r.tipo || tipo || 'propietario', mail: mailInfo };
   res.redirect('/admin');
 });
+app.post('/admin/agregar-admin', requireAdmin, async function (req, res) {
+  var ssid = req.session.spreadsheetId;
+  try {
+    var usuario = String(req.body.usuario || '').trim();
+    var nombre = String(req.body.nombre || '').trim();
+    var email = String(req.body.email || '').trim();
+    var pw = generarPasswordAleatoria();
+    var r = await authLib.agregarAdmin(ssid, usuario, pw, nombre, email);
+    if (!r.ok) throw new Error(r.error);
+    var mailInfo = { intentado: false, ok: false, error: null, email: email || null };
+    if (email) {
+      mailInfo.intentado = true;
+      var loginUrl = (process.env.SITE_URL || 'https://consorcio-web.onrender.com') + '/login?c=' + encodeURIComponent(ssid);
+      var m = await mailer.enviar(email, 'Acceso de administrador — ' + (req.session.consorcioNombre || 'Consorcio'),
+        'Hola,\n\nSe creó tu acceso como administrador del portal de ' + (req.session.consorcioNombre || 'el consorcio') + '.\n\n' +
+        'Ingresá a: ' + loginUrl + '\nUsuario: ' + usuario + '\nContraseña: ' + pw +
+        '\n\nTe recomendamos cambiarla apenas ingreses.\n\nSaludos.');
+      mailInfo.ok = m.ok; mailInfo.error = m.error || null;
+    }
+    req.session.flash = { tipo: 'credenciales', accion: 'activado', uf: usuario, ufs: [usuario], password: pw, tipoUsuario: 'administrador', mail: mailInfo };
+  } catch (e) {
+    req.session.flash = { tipo: 'aviso', texto: 'Error: ' + e.message };
+  }
+  res.redirect('/admin');
+});
 app.post('/admin/cambiar-password', requireAdmin, async function (req, res) {
   var ssid = req.session.spreadsheetId;
   var r = await authLib.cambiarPasswordAdmin(ssid, req.body.password);
