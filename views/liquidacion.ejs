@@ -35,6 +35,14 @@
   .deudor-uf { font-size: 14px; color: #333; font-weight: 600; }
   .deudor-monto { font-weight: bold; color: #c5221f; white-space: nowrap; }
   .deudor-total { border-bottom: none; border-top: 2px solid #c5221f; padding-top: 8px; margin-top: 2px; }
+  /* En pantallas chicas (celular), la card de Deudores pasa a mostrarse
+     AL FINAL (después de las tarjetas de liquidación) en vez de arriba
+     de todo — en la compu sigue apareciendo a la izquierda como antes. */
+  @media (max-width: 768px) {
+    .gastos-grid { display: flex; flex-direction: column; }
+    .cf-sidebar { order: 2; }
+    .gastos-main { order: 1; }
+  }
 </style>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (cache && cache.publicado) { %>
