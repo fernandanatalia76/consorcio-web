@@ -21,8 +21,10 @@
     return (neg?'-':'') + '$' + entero + ',' + partes[1];
   }
 %>
-<h1>Mi Liquidación<% if (mesLabel) { %> — <%= mesLabel %><% } %></h1>
-<p class="nota" style="margin-top:-8px;margin-bottom:12px"><a href="/mi-cuenta/cambiar-password">🔐 Cambiar mi contraseña</a></p>
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+  <h1 style="margin:0">Mi Liquidación<% if (mesLabel) { %> — <%= mesLabel %><% } %></h1>
+  <a href="/mi-cuenta/cambiar-password" class="btn btn-primary" style="text-decoration:none;white-space:nowrap;padding:12px 20px;font-size:15px">🔐 Cambiar mi contraseña</a>
+</div>
 <style>
   /* FIX: tarjetas más chatas (menos alto) y con espacio entre ellas */
   .liq-card { margin-bottom: 24px; padding-top: 12px; padding-bottom: 12px; }
