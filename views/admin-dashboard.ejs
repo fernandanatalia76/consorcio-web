@@ -201,7 +201,20 @@
 </div>
 <div class="grid-2">
   <div class="card">
-    <h3>🔐 Cambiar contraseña de admin</h3>
+    <h3>👤 Agregar administrador</h3>
+    <p class="nota">Creá un acceso de administrador propio para otra persona (ej. el administrador real del edificio), distinto del tuyo.</p>
+    <form method="POST" action="/admin/agregar-admin">
+      <label>Usuario (para loguearse)</label>
+      <input type="text" name="usuario" placeholder="Ej: administrador" required style="width:100%;padding:8px;margin-bottom:8px">
+      <label>Nombre</label>
+      <input type="text" name="nombre" placeholder="Nombre y apellido" style="width:100%;padding:8px;margin-bottom:8px">
+      <label>Email (para mandarle la clave)</label>
+      <input type="email" name="email" placeholder="nombre@mail.com" style="width:100%;padding:8px;margin-bottom:8px">
+      <button type="submit" class="btn btn-sm">Crear administrador</button>
+    </form>
+  </div>
+  <div class="card">
+    <h3>🔐 Cambiar mi contraseña de admin</h3>
     <form method="POST" action="/admin/cambiar-password" style="display:flex;gap:8px;align-items:end">
       <div style="flex:1"><label>Nueva contraseña</label><input type="text" name="password" required></div>
       <button type="submit" class="btn btn-sm" style="margin-bottom:2px">Cambiar</button>
