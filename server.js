@@ -466,14 +466,27 @@ async function cargarGastosDesdeSheets(ssid) {
   var di = await sheets.leerDatosInicio(ssid);
   var mg = getMesGastos(di);
   var todosGastos = await sheets.leerGastos(ssid, null);
+  // FIX: "Gastos Extraordinarios" es una solapa APARTE que el portal no
+  // leía — igual que hace el PDF de Apps Script, se usa como fuente
+  // principal de extraordinarios si tiene filas para este mes; si está
+  // vacía, se sigue usando lo que haya en la solapa "Gastos" con
+  // categoría Extraordinario (comportamiento de antes, sin cambios).
+  var extraDedicada = [];
+  try { extraDedicada = await sheets.leerGastosExtraordinarios(ssid, null); }
+  catch (e) { console.log('[GASTOS] No se pudo leer Gastos Extraordinarios:', e.message); }
   var gastos = [], impuestos = [], recaudacionTrabajos = [];
   todosGastos.forEach(function (g) {
     var cat = String(g.categoria || '').toLowerCase();
     var est = String(g.estado || '').toLowerCase();
     if (est.indexOf('adelanto') === 0) { recaudacionTrabajos.push(g); return; }
     if (cat.indexOf('ingreso extraordinar') !== -1) { gastos.push(g); return; }
+    // Si la solapa dedicada ya tiene datos de extraordinarios este mes,
+    // no duplicamos con lo que haya quedado categorizado igual en
+    // "Gastos" — se usa solo la fuente dedicada para esos casos.
+    if (extraDedicada.length && cat.indexOf('extraordinari') !== -1) return;
     if (String(g.proveedor || '').toLowerCase().indexOf('santander') !== -1) impuestos.push(g); else gastos.push(g);
   });
+  gastos = gastos.concat(extraDedicada);
   var cfData = await sheets.leerCashFlow(ssid);
   var mesNorm = (mg.meses[mg.mesGasNum - 1] || '').toLowerCase();
   var cashflow = cfData.find(function (cf) { var t = String(cf.mes || '').toLowerCase(); return t.indexOf(mesNorm) !== -1 && t.indexOf(String(mg.mesGasAnio)) !== -1; }) || null;
