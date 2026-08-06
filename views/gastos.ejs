@@ -208,7 +208,7 @@
         <% ordinarios.forEach(function(g) { %>
         <tr>
           <td data-label="Proveedor"><%= g.proveedor %></td>
-          <td data-label="N° Comprobante"><% if (g.facturaFileId && comp(g.nroComprobante)) { %><a href="/factura/<%= g.facturaFileId %>" target="_blank" rel="noopener" title="Ver factura"><%= comp(g.nroComprobante) %> 📎</a><% } else { %><%= comp(g.nroComprobante) %><% } %></td>
+          <td data-label="N° Comprobante"><% if (g.facturaFileId && comp(g.nroComprobante)) { %><a href="/factura/<%= g.facturaFileId %>" target="_blank" rel="noopener" title="Ver factura"><%= comp(g.nroComprobante) %> 🧾</a><% } else { %><%= comp(g.nroComprobante) %><% } %></td>
           <td data-label="Fecha"><%= g.fecha %></td>
           <td data-label="Importe"><%= money(g.importe) %></td>
           <td data-label="Gastos"><%= money(g.montoDebitado) %></td>
@@ -225,7 +225,7 @@
         <% extraordinarios.forEach(function(g) { %>
         <tr>
           <td data-label="Proveedor"><%= g.proveedor %></td>
-          <td data-label="N° Comprobante"><% if (g.facturaFileId && comp(g.nroComprobante)) { %><a href="/factura/<%= g.facturaFileId %>" target="_blank" rel="noopener" title="Ver factura"><%= comp(g.nroComprobante) %> 📎</a><% } else { %><%= comp(g.nroComprobante) %><% } %></td>
+          <td data-label="N° Comprobante"><% if (g.facturaFileId && comp(g.nroComprobante)) { %><a href="/factura/<%= g.facturaFileId %>" target="_blank" rel="noopener" title="Ver factura"><%= comp(g.nroComprobante) %> 🧾</a><% } else { %><%= comp(g.nroComprobante) %><% } %></td>
           <td data-label="Fecha"><%= g.fecha %></td>
           <td data-label="Categoría"><%= g.categoria %></td>
           <td data-label="Importe"><%= money(g.importe) %></td>
@@ -243,7 +243,7 @@
         <% impuestos.forEach(function(g) { %>
         <tr>
           <td data-label="Concepto"><%= g.proveedor %></td>
-          <td data-label="N° Comprobante"><% if (g.facturaFileId && comp(g.nroComprobante)) { %><a href="/factura/<%= g.facturaFileId %>" target="_blank" rel="noopener" title="Ver factura"><%= comp(g.nroComprobante) %> 📎</a><% } else { %><%= comp(g.nroComprobante) %><% } %></td>
+          <td data-label="N° Comprobante"><% if (g.facturaFileId && comp(g.nroComprobante)) { %><a href="/factura/<%= g.facturaFileId %>" target="_blank" rel="noopener" title="Ver factura"><%= comp(g.nroComprobante) %> 🧾</a><% } else { %><%= comp(g.nroComprobante) %><% } %></td>
           <td data-label="Gastos"><%= money(g.montoDebitado) %></td>
           <td data-label="Estado"><span class="badge badge-total"><%= g.estado %></span></td>
         </tr>
@@ -258,7 +258,7 @@
         <% recTrab.forEach(function(g) { %>
         <tr>
           <td data-label="Proveedor"><%= g.proveedor %></td>
-          <td data-label="N° Comprobante"><% if (g.facturaFileId && comp(g.nroComprobante)) { %><a href="/factura/<%= g.facturaFileId %>" target="_blank" rel="noopener" title="Ver factura"><%= comp(g.nroComprobante) %> 📎</a><% } else { %><%= comp(g.nroComprobante) %><% } %></td>
+          <td data-label="N° Comprobante"><% if (g.facturaFileId && comp(g.nroComprobante)) { %><a href="/factura/<%= g.facturaFileId %>" target="_blank" rel="noopener" title="Ver factura"><%= comp(g.nroComprobante) %> 🧾</a><% } else { %><%= comp(g.nroComprobante) %><% } %></td>
           <td data-label="Fecha"><%= g.fecha %></td>
           <td data-label="Importe"><%= money(g.importe) %></td>
           <td data-label="Gastos"><%= money(g.montoDebitado) %></td>

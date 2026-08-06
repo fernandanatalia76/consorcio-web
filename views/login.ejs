@@ -30,7 +30,7 @@
     <form method="POST" action="/login">
       <input type="hidden" name="consorcioId" value="<%= consorcioElegido.spreadsheetId %>">
       <label>N° de Unidad Funcional (o usuario de administrador)</label>
-      <input type="text" name="uf" placeholder="Ej: 10, o tu usuario si sos administrador" required>
+      <input type="text" name="uf" required>
       <p class="nota" style="margin-top:-8px;margin-bottom:8px">Si sos administrador, ingresá acá tu usuario (no una UF) — el tipo de abajo no aplica en ese caso.</p>
       <label>Soy</label>
       <div class="tipo-radios">
