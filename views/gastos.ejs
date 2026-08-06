@@ -110,6 +110,14 @@
 <style>
   .cf-sidebar{display:flex;flex-direction:column}
   .cf-historico-inversiones{border-top:3px solid #1a4a6e}
+  /* En pantallas chicas (celular), la card de Cash Flow pasa a
+     mostrarse AL FINAL (después del contenido de Gastos) en vez de
+     arriba de todo — en la compu sigue apareciendo a la izquierda. */
+  @media (max-width: 768px) {
+    .gastos-grid { display: flex; flex-direction: column; }
+    .cf-sidebar { order: 2; }
+    .gastos-main { order: 1; }
+  }
 </style>
 <div class="gastos-grid">
   <aside class="cf-sidebar">
