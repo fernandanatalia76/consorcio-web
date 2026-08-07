@@ -664,6 +664,7 @@ app.post('/admin/agregar-admin', requireAdmin, async function (req, res) {
     }
     req.session.flash = { tipo: 'credenciales', accion: 'activado', uf: usuario, ufs: [usuario], password: pw, tipoUsuario: 'administrador', mail: mailInfo };
   } catch (e) {
+    console.log('[ADMIN] Error en /admin/agregar-admin:', e.message, e.stack);
     req.session.flash = { tipo: 'aviso', texto: 'Error: ' + e.message };
   }
   res.redirect('/admin');
