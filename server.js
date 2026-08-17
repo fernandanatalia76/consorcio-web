@@ -14,6 +14,36 @@ var wordLiquidacion = require('./lib/wordLiquidacion');
 var app = express();
 var PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
+// FIX: Render está detrás de un proxy reverso — sin esto, req.ip
+// devuelve la IP interna del proxy (la misma para todos los usuarios),
+// lo que rompería el límite de intentos de login de acá abajo.
+app.set('trust proxy', 1);
+
+// ==================== LÍMITE DE INTENTOS DE LOGIN ====================
+// Protección básica contra fuerza bruta: bloquea una IP 15 minutos
+// después de 5 intentos de login fallidos seguidos.
+var loginAttempts = {}; // { [ip]: { count, blockedUntil } }
+var MAX_INTENTOS_LOGIN = 5;
+var BLOQUEO_LOGIN_MS = 15 * 60 * 1000;
+function chequearLimiteLogin(ip) {
+  var a = loginAttempts[ip];
+  if (!a || !a.blockedUntil) return { bloqueado: false };
+  if (Date.now() < a.blockedUntil) {
+    return { bloqueado: true, minutos: Math.ceil((a.blockedUntil - Date.now()) / 60000) };
+  }
+  delete loginAttempts[ip];
+  return { bloqueado: false };
+}
+function registrarLoginFallido(ip) {
+  if (!loginAttempts[ip]) loginAttempts[ip] = { count: 0, blockedUntil: null };
+  loginAttempts[ip].count++;
+  if (loginAttempts[ip].count >= MAX_INTENTOS_LOGIN) {
+    loginAttempts[ip].blockedUntil = Date.now() + BLOQUEO_LOGIN_MS;
+  }
+}
+function limpiarLoginFallido(ip) {
+  delete loginAttempts[ip];
+}
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
@@ -125,14 +155,26 @@ app.get('/login', async function (req, res) {
 });
 app.post('/login', async function (req, res) {
   try {
+    var ip = req.ip;
+    var limite = chequearLimiteLogin(ip);
     var consorcioId = req.body.consorcioId;
     var consorcio = await directorio.buscarPorSpreadsheetId(consorcioId);
     if (!consorcio) {
       var lista = await directorio.listarConsorcios();
       return res.render('login', { error: 'Consorcio inválido.', consorcios: lista, consorcioElegido: null });
     }
+    if (limite.bloqueado) {
+      return res.render('login', {
+        error: 'Demasiados intentos fallidos. Probá de nuevo en ' + limite.minutos + ' minuto(s).',
+        consorcios: [], consorcioElegido: consorcio
+      });
+    }
     var r = await authLib.login(consorcioId, req.body.uf, req.body.password, req.body.tipo);
-    if (!r.ok) return res.render('login', { error: r.error, consorcios: [], consorcioElegido: consorcio });
+    if (!r.ok) {
+      registrarLoginFallido(ip);
+      return res.render('login', { error: r.error, consorcios: [], consorcioElegido: consorcio });
+    }
+    limpiarLoginFallido(ip);
     req.session.usuario = r.usuario;
     req.session.spreadsheetId = consorcioId;
     req.session.consorcioNombre = consorcio.nombre;
