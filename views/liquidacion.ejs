@@ -33,19 +33,6 @@
   .liq-total-monto { line-height: 1.2; }
   .liq-detalle { padding-top: 6px; padding-bottom: 6px; }
   .liq-det-item { padding-top: 4px; padding-bottom: 4px; }
-  .deudores-lista { display: flex; flex-direction: column; gap: 10px; }
-  .deudor-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-  .deudor-uf { font-size: 14px; color: #333; font-weight: 600; }
-  .deudor-monto { font-weight: bold; color: #c5221f; white-space: nowrap; }
-  .deudor-total { border-bottom: none; border-top: 2px solid #c5221f; padding-top: 8px; margin-top: 2px; }
-  /* En pantallas chicas (celular), la card de Deudores pasa a mostrarse
-     AL FINAL (después de las tarjetas de liquidación) en vez de arriba
-     de todo — en la compu sigue apareciendo a la izquierda como antes. */
-  @media (max-width: 768px) {
-    .gastos-grid { display: flex; flex-direction: column; }
-    .cf-sidebar { order: 2; }
-    .gastos-main { order: 1; }
-  }
 </style>
 <% if (error) { %><div class="msg error"><%= error %></div><% } %>
 <% if (cache && cache.publicado) { %>
@@ -102,30 +89,7 @@
   </script>
 <% } %>
 <% if (cache && cache.publicado) { %>
-<div class="gastos-grid">
-  <aside class="cf-sidebar">
-    <div class="card cf-historico">
-      <h3>Deudores</h3>
-      <% var listaDeudores = (typeof deudores !== 'undefined' && deudores) ? deudores : []; %>
-      <% if (listaDeudores.length) { %>
-        <div class="deudores-lista">
-          <% listaDeudores.forEach(function(d){ %>
-            <div class="deudor-item">
-              <div class="deudor-uf"><%= d.tipoUnidad || 'Unidad' %> <%= d.numeroUnidad %></div>
-              <div class="deudor-monto"><%= money(d.deuda) %></div>
-            </div>
-          <% }); %>
-          <div class="deudor-item deudor-total">
-            <div class="deudor-uf"><strong>TOTAL</strong></div>
-            <div class="deudor-monto"><%= money(listaDeudores.reduce(function(s,d){return s+d.deuda;},0)) %></div>
-          </div>
-        </div>
-      <% } else { %>
-        <p class="nota">No hay deudores registrados este ciclo.</p>
-      <% } %>
-    </div>
-  </aside>
-  <section class="gastos-main">
+<section class="gastos-main">
   <% if (datos && datos.length) { %>
   <% datos.forEach(function(item, idx) {
        var dato = item.dato;
@@ -170,10 +134,6 @@
             <div class="liq-det-lbl">Exp. mes anterior</div>
             <div class="liq-det-val"><%= money(dato.expAdeudadas) %></div>
           </div>
-          <div class="liq-det-item">
-            <div class="liq-det-lbl">Pagos</div>
-            <div class="liq-det-val"><%= money(dato.pagos) %></div>
-          </div>
           <div class="liq-det-item liq-det-deuda">
             <div class="liq-det-lbl">Deuda</div>
             <div class="liq-det-val"><%= money(dato.deuda) %></div>
@@ -207,7 +167,6 @@
   <% } else if (!error) { %>
     <div class="msg warning">No se encontraron datos en la liquidación de <%= mesLabel %>.</div>
   <% } %>
-  </section>
-</div>
+</section>
 <% } %>
 <%- include('footer') %>
