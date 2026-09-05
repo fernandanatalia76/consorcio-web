@@ -163,6 +163,15 @@
       }
       var ordinarios = gastos.filter(function(g){ return !esExtra(g); });
       var extraordinarios = gastos.filter(esExtra);
+      // FIX: "Sin factura- deuda mes anterior" es deuda que ya quedó
+      // reflejada en el cierre del mes anterior, no un gasto nuevo de
+      // este ciclo — se excluye acá igual que ya se excluye en el
+      // reporte "PDF Gastos y Saldos" de Apps Script.
+      function esDeudaMesAnterior(g){
+        return String(g.estado||'').toLowerCase().indexOf('deuda mes anterior') !== -1;
+      }
+      ordinarios = ordinarios.filter(function(g){ return !esDeudaMesAnterior(g); });
+      extraordinarios = extraordinarios.filter(function(g){ return !esDeudaMesAnterior(g); });
       var recTrab = (typeof recaudacionTrabajos !== 'undefined' && recaudacionTrabajos) ? recaudacionTrabajos : [];
       var totDebOrdinarios = 0; ordinarios.forEach(function(g){ totDebOrdinarios += toNum(g.montoDebitado); });
       var totDebImpuestos  = 0; impuestos.forEach(function(g){ totDebImpuestos += toNum(g.montoDebitado); });
