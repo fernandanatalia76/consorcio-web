@@ -40,8 +40,6 @@
       print-color-adjust: exact !important;
       color-adjust: exact !important;
     }
-    /* Sin esto, el navegador repite la fila TOTAL (tfoot) al pie de
-       CADA hoja impresa, no solo al final del detalle. */
     tfoot { display: table-row-group; }
   }
 </style>
@@ -110,9 +108,6 @@
 <style>
   .cf-sidebar{display:flex;flex-direction:column}
   .cf-historico-inversiones{border-top:3px solid #1a4a6e}
-  /* En pantallas chicas (celular), la card de Cash Flow pasa a
-     mostrarse AL FINAL (después del contenido de Gastos) en vez de
-     arriba de todo — en la compu sigue apareciendo a la izquierda. */
   @media (max-width: 768px) {
     .gastos-grid { display: flex; flex-direction: column; }
     .cf-sidebar { order: 2; }
@@ -163,19 +158,12 @@
     <%
       function esExtra(g){
         var c = String(g.categoria||'').toLowerCase();
-        // FIX: "Ingreso extraordinarias" (fondos comunes de inversión)
-        // contiene la palabra "extraordinari" pero NO es un gasto
-        // extraordinario — es un débito real que va en Gastos ordinarios.
         if (c.indexOf('ingreso extraordinar') !== -1) return false;
         return c.indexOf('extraordinari') !== -1;
       }
       var ordinarios = gastos.filter(function(g){ return !esExtra(g); });
       var extraordinarios = gastos.filter(esExtra);
       var recTrab = (typeof recaudacionTrabajos !== 'undefined' && recaudacionTrabajos) ? recaudacionTrabajos : [];
-      // FIX: "Total débitos" del resumen ahora es Gastos ordinarios +
-      // Impuestos y Comisiones bancarias (lo que realmente se ve abajo en
-      // el detalle), en vez del dato de la solapa Cash Flow que podía no
-      // coincidir.
       var totDebOrdinarios = 0; ordinarios.forEach(function(g){ totDebOrdinarios += toNum(g.montoDebitado); });
       var totDebImpuestos  = 0; impuestos.forEach(function(g){ totDebImpuestos += toNum(g.montoDebitado); });
       var totDebResumen = totDebOrdinarios + totDebImpuestos;
@@ -204,7 +192,7 @@
     <% } %>
     <% if (ordinarios.length) { %>
     <div class="card"><h3>Detalle de facturas — Gastos ordinarios</h3><div style="overflow-x:auto">
-      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
+      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Detalle</th><th>Estado</th></tr></thead><tbody>
         <% ordinarios.forEach(function(g) { %>
         <tr>
           <td data-label="Proveedor"><%= g.proveedor %></td>
@@ -212,16 +200,17 @@
           <td data-label="Fecha"><%= g.fecha %></td>
           <td data-label="Importe"><%= money(g.importe) %></td>
           <td data-label="Gastos"><%= money(g.montoDebitado) %></td>
+          <td data-label="Detalle"><%= g.detalle %></td>
           <td data-label="Estado"><% if(g.estado&&g.estado.indexOf('Validado')!==-1){%><span class="badge badge-total"><%= g.estado %></span><%}else if(g.estado&&(g.estado.indexOf('Sin')!==-1||g.estado.indexOf('No ')!==-1)){%><span class="badge badge-pendiente"><%= g.estado %></span><%}else{%><span class="badge"><%= g.estado %></span><%}%></td>
         </tr>
         <% }); %>
       </tbody>
-      <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th></th><th></th><th data-label="Gastos"><%= sumCol(ordinarios,'montoDebitado') %></th><th></th></tr></tfoot>
+      <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th></th><th></th><th data-label="Gastos"><%= sumCol(ordinarios,'montoDebitado') %></th><th></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
     <% if (extraordinarios.length) { %>
     <div class="card"><h3>Gastos extraordinarios</h3><div style="overflow-x:auto">
-      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Categoría</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
+      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Categoría</th><th>Importe</th><th>Gastos</th><th>Detalle</th><th>Estado</th></tr></thead><tbody>
         <% extraordinarios.forEach(function(g) { %>
         <tr>
           <td data-label="Proveedor"><%= g.proveedor %></td>
@@ -230,31 +219,33 @@
           <td data-label="Categoría"><%= g.categoria %></td>
           <td data-label="Importe"><%= money(g.importe) %></td>
           <td data-label="Gastos"><%= money(g.montoDebitado) %></td>
+          <td data-label="Detalle"><%= g.detalle %></td>
           <td data-label="Estado"><span class="badge"><%= g.estado %></span></td>
         </tr>
         <% }); %>
       </tbody>
-      <tfoot><tr class="fila-total"><th colspan="4">TOTAL</th><th data-label="Importe"><%= sumCol(extraordinarios,'importe') %></th><th data-label="Gastos"><%= sumCol(extraordinarios,'montoDebitado') %></th><th></th></tr></tfoot>
+      <tfoot><tr class="fila-total"><th colspan="4">TOTAL</th><th data-label="Importe"><%= sumCol(extraordinarios,'importe') %></th><th data-label="Gastos"><%= sumCol(extraordinarios,'montoDebitado') %></th><th></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
     <% if (impuestos.length) { %>
     <div class="card"><h3>Impuestos y Comisiones bancarias</h3><div style="overflow-x:auto">
-      <table class="tabla rtable"><thead><tr><th>Concepto</th><th>N° Comprobante</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
+      <table class="tabla rtable"><thead><tr><th>Concepto</th><th>N° Comprobante</th><th>Gastos</th><th>Detalle</th><th>Estado</th></tr></thead><tbody>
         <% impuestos.forEach(function(g) { %>
         <tr>
           <td data-label="Concepto"><%= g.proveedor %></td>
           <td data-label="N° Comprobante"><% if (g.facturaFileId && comp(g.nroComprobante)) { %><a href="/factura/<%= g.facturaFileId %>" target="_blank" rel="noopener" title="Ver factura"><%= comp(g.nroComprobante) %> 🧾</a><% } else { %><%= comp(g.nroComprobante) %><% } %></td>
           <td data-label="Gastos"><%= money(g.montoDebitado) %></td>
+          <td data-label="Detalle"><%= g.detalle %></td>
           <td data-label="Estado"><span class="badge badge-total"><%= g.estado %></span></td>
         </tr>
         <% }); %>
       </tbody>
-      <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th data-label="Gastos"><%= sumCol(impuestos,'montoDebitado') %></th><th></th></tr></tfoot>
+      <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th data-label="Gastos"><%= sumCol(impuestos,'montoDebitado') %></th><th></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
     <% if (recTrab.length) { %>
     <div class="card"><h3>Detalle recaudación para trabajos</h3><div style="overflow-x:auto">
-      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Estado</th></tr></thead><tbody>
+      <table class="tabla tabla-striped rtable"><thead><tr><th>Proveedor</th><th>N° Comprobante</th><th>Fecha</th><th>Importe</th><th>Gastos</th><th>Detalle</th><th>Estado</th></tr></thead><tbody>
         <% recTrab.forEach(function(g) { %>
         <tr>
           <td data-label="Proveedor"><%= g.proveedor %></td>
@@ -262,11 +253,12 @@
           <td data-label="Fecha"><%= g.fecha %></td>
           <td data-label="Importe"><%= money(g.importe) %></td>
           <td data-label="Gastos"><%= money(g.montoDebitado) %></td>
+          <td data-label="Detalle"><%= g.detalle %></td>
           <td data-label="Estado"><span class="badge"><%= g.estado %></span></td>
         </tr>
         <% }); %>
       </tbody>
-      <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th></th><th></th><th data-label="Gastos"><%= sumCol(recTrab,'montoDebitado') %></th><th></th></tr></tfoot>
+      <tfoot><tr class="fila-total"><th>TOTAL</th><th></th><th></th><th></th><th data-label="Gastos"><%= sumCol(recTrab,'montoDebitado') %></th><th></th><th></th></tr></tfoot>
       </table></div></div>
     <% } %>
   </section>
